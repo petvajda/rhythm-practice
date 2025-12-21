@@ -92,12 +92,14 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             margin-bottom: 4px;
+            text-align: center;
         }
         
         .header p {
             font-size: 13px;
             color: var(--text-secondary);
             font-weight: 400;
+            text-align: center;
         }
         
         /* Main content area */
@@ -550,10 +552,29 @@
             display: block;
         }
         
+        /* Cursor highlighting for notes during playback */
+        .abcjs-cursor {
+            fill: #ff3366 !important;
+        }
+        
+        .abcjs-cursor circle,
+        .abcjs-cursor path {
+            fill: #ff3366 !important;
+        }
+        
+        /* Header alignment */
+        header {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
         .nav-button {
-            position: fixed;
-            top: 16px;
+            position: absolute;
+            top: 50%;
             right: 16px;
+            transform: translateY(-50%);
             width: 48px;
             height: 48px;
             border-radius: 50%;
@@ -569,7 +590,7 @@
         }
         
         .nav-button:active {
-            transform: scale(0.95);
+            transform: translateY(-50%) scale(0.95);
             background: rgba(255, 255, 255, 0.15);
         }
         
@@ -585,6 +606,15 @@
         <div class="header">
             <h1>Rhythm Practice</h1>
             <p>Generate random rhythm exercises</p>
+            
+            <!-- Settings Button -->
+            <button class="nav-button" id="navButton" onclick="togglePage()" aria-label="Settings">
+                <svg id="navIcon" viewBox="0 0 24 24" fill="white">
+                    <circle cx="5" cy="12" r="2"/>
+                    <circle cx="12" cy="12" r="2"/>
+                    <circle cx="19" cy="12" r="2"/>
+                </svg>
+            </button>
         </div>
         
         <div class="install-banner" id="installBanner">
@@ -843,15 +873,6 @@
                 </div>
             </div>
             </div>
-            
-            <!-- Navigation Buttons -->
-            <button class="nav-button" id="navButton" onclick="togglePage()" aria-label="Settings">
-                <svg id="navIcon" viewBox="0 0 24 24" fill="white">
-                    <circle cx="5" cy="12" r="2"/>
-                    <circle cx="12" cy="12" r="2"/>
-                    <circle cx="19" cy="12" r="2"/>
-                </svg>
-            </button>
         </div>
     </div>
     
@@ -1263,40 +1284,94 @@ K:C clef=bass
                 return;
             }
             
-            isPlaying = true;
-            const musicDisplay = document.getElementById('musicDisplay');
-            musicDisplay.classList.add('playing');
-            
-            // Change button to "Stop"
-            const playButton = document.querySelector('.btn-play');
-            playButton.innerHTML = '⬛ Stop';
-            
-            showStatus('Playing...', 'playing');
-            
-            const tempo = parseInt(document.getElementById('tempo').value);
-            const barCount = parseInt(document.getElementById('barCount').value);
-            
-            // Clear any previously scheduled sources
-            scheduledSources = [];
-            
-            // Schedule the audio with the actual bar count
-            const duration = scheduleAudio(tempo, true, barCount); // true = metronome enabled
-            
-            // Stop after duration
-            playbackTimeout = setTimeout(() => {
+            try {
+                isPlaying = true;
+                
+                // Change button to "Stop"
+                const playButton = document.querySelector('.btn-play');
+                playButton.innerHTML = '⬛ Stop';
+                
+                showStatus('Playing...', 'playing');
+                
+                const tempo = parseInt(document.getElementById('tempo').value);
+                const barCount = parseInt(document.getElementById('barCount').value);
+                
+                // Clear any previously scheduled sources
+                scheduledSources = [];
+                
+                // Get audio context
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                // Function to play one iteration
+                const playIteration = () => {
+                    if (!isPlaying) return;
+                    
+                    // Clear previous sources
+                    scheduledSources = [];
+                    
+                    // Schedule all audio
+                    const totalDuration = scheduleAudio(tempo, true, barCount);
+                    
+                    // Highlight notes as they play
+                    const { notes } = parseABCNotes(currentABC);
+                    const beatDuration = 60 / tempo;
+                    const sixteenthDuration = beatDuration / 4;
+                    
+                    notes.forEach((note, index) => {
+                        const highlightTime = note.start * sixteenthDuration * 1000;
+                        const clearTime = (note.start + note.duration) * sixteenthDuration * 1000;
+                        
+                        setTimeout(() => {
+                            if (!isPlaying) return;
+                            const allNotes = document.querySelectorAll('.abcjs-note');
+                            if (allNotes[index]) {
+                                allNotes[index].classList.add('abcjs-cursor');
+                            }
+                        }, highlightTime);
+                        
+                        setTimeout(() => {
+                            if (!isPlaying) return;
+                            const allNotes = document.querySelectorAll('.abcjs-note');
+                            if (allNotes[index]) {
+                                allNotes[index].classList.remove('abcjs-cursor');
+                            }
+                        }, clearTime);
+                    });
+                    
+                    // Auto-stop after this iteration finishes
+                    playbackTimeout = setTimeout(() => {
+                        stopPlayback();
+                    }, totalDuration * 1000 + 100);
+                };
+                
+                // Start the first iteration
+                playIteration();
+                
+            } catch (error) {
+                console.error("Play error:", error);
                 stopPlayback();
-            }, (duration + 0.5) * 1000);
+                showStatus('Error playing: ' + error.message, 'error');
+            }
         }
         
         function stopPlayback() {
+            // Clear all note highlights
+            const allNotes = document.querySelectorAll('.abcjs-note');
+            allNotes.forEach(note => note.classList.remove('abcjs-cursor'));
+            
             // Stop all scheduled oscillators immediately
-            scheduledSources.forEach(source => {
-                try {
-                    source.stop();
-                } catch (e) {
-                    // Already stopped
-                }
-            });
+            if (audioContext) {
+                const now = audioContext.currentTime;
+                scheduledSources.forEach(source => {
+                    try {
+                        source.stop(now);
+                    } catch (e) {
+                        // Already stopped
+                    }
+                });
+            }
             scheduledSources = [];
             
             // Clear the timeout
@@ -1311,7 +1386,9 @@ K:C clef=bass
             
             // Change button back to "Play"
             const playButton = document.querySelector('.btn-play');
-            playButton.innerHTML = '▶ Play with Click';
+            if (playButton) {
+                playButton.innerHTML = '▶ Play with Click';
+            }
             
             showStatus('Playback stopped', 'success');
         }
