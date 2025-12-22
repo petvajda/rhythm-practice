@@ -740,7 +740,7 @@
                     <div class="panel-header">Select Rhythm Patterns</div>
                 
                 <div class="form-group">
-                    <label style="cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px;" onclick="toggleGroup('simple')">
+                    <label style="cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px;" onclick="toggleGroup('simple', event)">
                         <input type="checkbox" id="group-simple" checked style="margin: 0; cursor: pointer;">
                         Simple Patterns
                     </label>
@@ -761,7 +761,7 @@
                 </div>
                 
                 <div class="form-group">
-                    <label style="cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px;" onclick="toggleGroup('1note')">
+                    <label style="cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px;" onclick="toggleGroup('1note', event)">
                         <input type="checkbox" id="group-1note" checked style="margin: 0; cursor: pointer;">
                         1-Note Patterns
                     </label>
@@ -794,7 +794,7 @@
                 </div>
                 
                 <div class="form-group">
-                    <label style="cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px;" onclick="toggleGroup('2note')">
+                    <label style="cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px;" onclick="toggleGroup('2note', event)">
                         <input type="checkbox" id="group-2note" checked style="margin: 0; cursor: pointer;">
                         2-Note Patterns
                     </label>
@@ -847,7 +847,7 @@
                 </div>
                 
                 <div class="form-group">
-                    <label style="cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px;" onclick="toggleGroup('3note')">
+                    <label style="cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px;" onclick="toggleGroup('3note', event)">
                         <input type="checkbox" id="group-3note" checked style="margin: 0; cursor: pointer;">
                         3-Note Patterns
                     </label>
@@ -880,7 +880,7 @@
                 </div>
                 
                 <div class="form-group">
-                    <label style="cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px;" onclick="toggleGroup('triplet')">
+                    <label style="cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px;" onclick="toggleGroup('triplet', event)">
                         <input type="checkbox" id="group-triplet" style="margin: 0; cursor: pointer;">
                         Triplet Patterns
                     </label>
@@ -1056,12 +1056,17 @@ K:C clef=bass
             }
         }
         
-        function toggleGroup(groupName) {
+        function toggleGroup(groupName, event) {
             const groupCheckbox = document.getElementById(`group-${groupName}`);
             const patternCheckboxes = document.querySelectorAll(`.pattern-${groupName}`);
             
-            // Toggle the group checkbox
-            groupCheckbox.checked = !groupCheckbox.checked;
+            // If the click was directly on the checkbox, it's already been toggled by default behavior
+            // If it was on the label, we need to toggle it
+            const clickedCheckbox = event && event.target.type === 'checkbox';
+            
+            if (!clickedCheckbox) {
+                groupCheckbox.checked = !groupCheckbox.checked;
+            }
             
             // Set all pattern checkboxes to match the group checkbox state
             patternCheckboxes.forEach(checkbox => {
@@ -1273,7 +1278,7 @@ K:C clef=bass
             oscillator.type = 'triangle'; // Triangle wave for bass sound
             
             // Envelope for natural sound
-            gainNode.gain.setValueAtTime(0.5, startTime);
+            gainNode.gain.setValueAtTime(0.6, startTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
             
             oscillator.start(startTime);
@@ -1296,7 +1301,7 @@ K:C clef=bass
             oscillator.frequency.value = isDownbeat ? 1200 : 800;
             oscillator.type = 'sine';
             
-            gainNode.gain.setValueAtTime(0.3, time);
+            gainNode.gain.setValueAtTime(0.2, time);
             gainNode.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
             
             oscillator.start(time);
