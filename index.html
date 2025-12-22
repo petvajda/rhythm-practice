@@ -716,6 +716,10 @@
                                 <input type="range" id="tempo" min="50" max="180" value="80" 
                                        oninput="document.getElementById('tempoValue').textContent = this.value">
                             </div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px;">
+                                <input type="checkbox" id="countIn" checked style="width: 20px; height: 20px; cursor: pointer;">
+                                <label for="countIn" style="margin: 0; cursor: pointer; user-select: none;">Count-in</label>
+                            </div>
                         </div>
                         
                         <div class="form-group" style="display: flex; align-items: flex-end;">
@@ -993,6 +997,7 @@
         let currentPatternStructure = []; // Store the pattern structure for redrawing
         let scheduledSources = []; // Track all scheduled audio sources for stopping
         let playbackTimeout = null; // Track the timeout for automatic stop
+        let visualObj = null; // Store the visual object for cursor animation
 
         function redrawWithNewNote() {
             // Only redraw if we have a current pattern
@@ -1023,11 +1028,12 @@ K:C clef=bass
             
             currentABC = abcNotation;
             
-            // Render music
-            ABCJS.renderAbc("music", currentABC, {
+            // Render music and store visual object for cursor
+            visualObj = ABCJS.renderAbc("music", currentABC, {
                 responsive: "resize",
-                staffwidth: window.innerWidth - 72
-            });
+                staffwidth: window.innerWidth - 72,
+                add_classes: true
+            })[0];
             
             showStatus('Redrawn with ' + bassNote, 'success');
         }
@@ -1126,14 +1132,15 @@ K:C clef=bass
             
             currentABC = abcNotation;
             
-            // Render music
+            // Render music and store visual object for cursor
             document.querySelector('.empty-state').style.display = 'none';
             document.getElementById('music').style.display = 'block';
             
-            ABCJS.renderAbc("music", currentABC, {
+            visualObj = ABCJS.renderAbc("music", currentABC, {
                 responsive: "resize",
-                staffwidth: window.innerWidth - 72
-            });
+                staffwidth: window.innerWidth - 72,
+                add_classes: true
+            })[0];
             
             showStatus('Rhythm generated successfully!', 'success');
         }
@@ -1353,6 +1360,7 @@ K:C clef=bass
                 
                 const tempo = parseInt(document.getElementById('tempo').value);
                 const barCount = parseInt(document.getElementById('barCount').value);
+                const countInEnabled = document.getElementById('countIn').checked;
                 
                 // Clear any previously scheduled sources
                 scheduledSources = [];
@@ -1362,41 +1370,58 @@ K:C clef=bass
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 }
                 
+                const beatDuration = 60 / tempo;
+                let countInDelay = 0;
+                
+                // Schedule count-in clicks if enabled
+                if (countInEnabled) {
+                    const startTime = audioContext.currentTime + 0.1;
+                    for (let i = 0; i < 4; i++) {
+                        const clickTime = startTime + (i * beatDuration);
+                        const isDownbeat = (i === 0);
+                        playClick(clickTime, isDownbeat);
+                    }
+                    // Delay the rhythm playback by 4 beats
+                    countInDelay = 4 * beatDuration * 1000;
+                }
+                
                 // Function to play one iteration
                 const playIteration = () => {
                     if (!isPlaying) return;
                     
-                    // Clear previous sources
-                    scheduledSources = [];
+                    // Clear previous sources (except count-in clicks)
+                    const countInSources = scheduledSources.slice(0, countInEnabled ? 4 : 0);
+                    scheduledSources = countInSources;
                     
                     // Schedule all audio
                     const totalDuration = scheduleAudio(tempo, true, barCount);
                     
                     // Highlight notes as they play
-                    const { notes } = parseABCNotes(currentABC);
-                    const beatDuration = 60 / tempo;
-                    const sixteenthDuration = beatDuration / 4;
-                    
-                    notes.forEach((note, index) => {
-                        const highlightTime = note.start * sixteenthDuration * 1000;
-                        const clearTime = (note.start + note.duration) * sixteenthDuration * 1000;
+                    if (visualObj && visualObj.engraver && visualObj.engraver.staffgroups) {
+                        const { notes } = parseABCNotes(currentABC);
+                        const sixteenthDuration = beatDuration / 4;
                         
-                        setTimeout(() => {
-                            if (!isPlaying) return;
-                            const allNotes = document.querySelectorAll('.abcjs-note');
-                            if (allNotes[index]) {
-                                allNotes[index].classList.add('abcjs-cursor');
-                            }
-                        }, highlightTime);
-                        
-                        setTimeout(() => {
-                            if (!isPlaying) return;
-                            const allNotes = document.querySelectorAll('.abcjs-note');
-                            if (allNotes[index]) {
-                                allNotes[index].classList.remove('abcjs-cursor');
-                            }
-                        }, clearTime);
-                    });
+                        notes.forEach((note, index) => {
+                            const highlightTime = note.start * sixteenthDuration * 1000;
+                            const clearTime = (note.start + note.duration) * sixteenthDuration * 1000;
+                            
+                            setTimeout(() => {
+                                if (!isPlaying) return;
+                                const allNotes = document.querySelectorAll('.abcjs-note');
+                                if (allNotes[index]) {
+                                    allNotes[index].classList.add('abcjs-cursor');
+                                }
+                            }, highlightTime);
+                            
+                            setTimeout(() => {
+                                if (!isPlaying) return;
+                                const allNotes = document.querySelectorAll('.abcjs-note');
+                                if (allNotes[index]) {
+                                    allNotes[index].classList.remove('abcjs-cursor');
+                                }
+                            }, clearTime);
+                        });
+                    }
                     
                     // Auto-stop after this iteration finishes
                     playbackTimeout = setTimeout(() => {
@@ -1404,8 +1429,16 @@ K:C clef=bass
                     }, totalDuration * 1000 + 100);
                 };
                 
-                // Start the first iteration
-                playIteration();
+                // Start the first iteration after count-in
+                if (countInDelay > 0) {
+                    setTimeout(() => {
+                        if (isPlaying) {
+                            playIteration();
+                        }
+                    }, countInDelay);
+                } else {
+                    playIteration();
+                }
                 
             } catch (error) {
                 console.error("Play error:", error);
@@ -1470,10 +1503,11 @@ K:C clef=bass
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(() => {
                 if (currentABC) {
-                    ABCJS.renderAbc("music", currentABC, {
+                    visualObj = ABCJS.renderAbc("music", currentABC, {
                         responsive: "resize",
-                        staffwidth: window.innerWidth - 72
-                    });
+                        staffwidth: window.innerWidth - 72,
+                        add_classes: true
+                    })[0];
                 }
             }, 250);
         });
