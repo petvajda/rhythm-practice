@@ -170,6 +170,11 @@
             margin-bottom: 16px;
         }
         
+        .control-panel.compact {
+            padding: 16px 20px 12px 20px;
+            margin-bottom: 12px;
+        }
+        
         .panel-header {
             font-size: 14px;
             font-weight: 600;
@@ -201,9 +206,18 @@
         
         .form-row {
             display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .form-row.two-col {
             grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 20px;
+        }
+        
+        .form-row.playback-row {
+            grid-template-columns: 4fr 1fr;
+            gap: 0;
         }
         
         .form-row .form-group {
@@ -598,6 +612,7 @@
             width: 24px;
             height: 24px;
             display: block;
+            margin: auto;
         }
     </style>
 </head>
@@ -609,11 +624,7 @@
             
             <!-- Settings Button -->
             <button class="nav-button" id="navButton" onclick="togglePage()" aria-label="Settings">
-                <svg id="navIcon" viewBox="0 0 24 24" fill="white">
-                    <circle cx="5" cy="12" r="2"/>
-                    <circle cx="12" cy="12" r="2"/>
-                    <circle cx="19" cy="12" r="2"/>
-                </svg>
+                <span style="color: white; font-size: 20px; font-weight: bold; line-height: 1;">⋯</span>
             </button>
         </div>
         
@@ -635,7 +646,7 @@
         <div class="main-content">
             <!-- Page 1: Main Practice -->
             <div id="page1" class="page active">
-                <div class="control-panel">
+                <div class="control-panel compact">
                     <div class="panel-header">Exercise Setup</div>
                     
                     <div class="form-row">
@@ -661,12 +672,13 @@
                                 <option value="E,,">E</option>
                             </select>
                         </div>
-                    </div>
-                    
-                    <div class="button-group">
-                        <button class="btn-primary" onclick="generateRhythm()">
-                            Generate Rhythm
-                        </button>
+                        
+                        <div class="form-group">
+                            <label style="opacity: 0; pointer-events: none;">Action</label>
+                            <button class="btn-primary" onclick="generateRhythm()" style="width: 100%; margin: 0;">
+                                Generate
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
@@ -682,22 +694,27 @@
                     <div id="music"></div>
                 </div>
                 
-                <div class="control-panel">
+                <div class="control-panel compact">
                     <div class="panel-header">Playback</div>
                     
-                    <div class="tempo-control">
-                        <div class="tempo-display">
-                            <label style="margin: 0;">Tempo</label>
-                            <span class="tempo-value" id="tempoValue">80</span>
+                    <div class="form-row playback-row">
+                        <div class="form-group">
+                            <div class="tempo-control">
+                                <div class="tempo-display">
+                                    <label style="margin: 0;">Tempo</label>
+                                    <span class="tempo-value" id="tempoValue">80</span>
+                                </div>
+                                <input type="range" id="tempo" min="50" max="180" value="80" 
+                                       oninput="document.getElementById('tempoValue').textContent = this.value">
+                            </div>
                         </div>
-                        <input type="range" id="tempo" min="40" max="200" value="80" 
-                               oninput="document.getElementById('tempoValue').textContent = this.value">
-                    </div>
-                    
-                    <div class="button-group">
-                        <button class="btn-play" onclick="playRhythm()">
-                            ▶ Play with Click
-                        </button>
+                        
+                        <div class="form-group">
+                            <label style="opacity: 0; pointer-events: none;">Action</label>
+                            <button class="btn-play" onclick="playRhythm()" style="width: 100%; margin: 0 0 0 16px;">
+                                ▶ Play
+                            </button>
+                        </div>
                     </div>
                     
                     <div id="statusMessage"></div>
@@ -995,14 +1012,17 @@ K:C clef=bass
         function togglePage() {
             const page1 = document.getElementById('page1');
             const page2 = document.getElementById('page2');
+            const navButton = document.getElementById('navButton');
             
             if (currentPage === 1) {
                 page1.classList.remove('active');
                 page2.classList.add('active');
+                navButton.innerHTML = '<span style="color: white; font-size: 24px; font-weight: bold; line-height: 1;">←</span>';
                 currentPage = 2;
             } else {
                 page2.classList.remove('active');
                 page1.classList.add('active');
+                navButton.innerHTML = '<span style="color: white; font-size: 20px; font-weight: bold; line-height: 1;">⋯</span>';
                 currentPage = 1;
             }
         }
@@ -1387,7 +1407,7 @@ K:C clef=bass
             // Change button back to "Play"
             const playButton = document.querySelector('.btn-play');
             if (playButton) {
-                playButton.innerHTML = '▶ Play with Click';
+                playButton.innerHTML = '▶ Play';
             }
             
             showStatus('Playback stopped', 'success');
