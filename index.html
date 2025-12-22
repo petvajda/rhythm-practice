@@ -375,6 +375,12 @@
             background: linear-gradient(135deg, var(--playing), #ffaa00);
             color: var(--bg-primary);
             box-shadow: 0 4px 16px rgba(255, 215, 0, 0.3);
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
         }
         
         /* Status messages */
@@ -413,14 +419,18 @@
         
         /* Tempo slider */
         .tempo-control {
-            margin-top: 20px;
+            margin-top: 0;
         }
         
         .tempo-display {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .tempo-display label {
+            margin-bottom: 0;
         }
         
         .tempo-value {
@@ -732,15 +742,15 @@
                     <div class="checkbox-group">
                         <div class="checkbox-item">
                             <input type="checkbox" id="simple_whole" value="simple_whole" checked>
-                            <label for="simple_whole">Rest</label>
+                            <label for="simple_whole">R4</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="simple_quarter" value="simple_quarter" checked>
-                            <label for="simple_quarter">Quarter</label>
+                            <label for="simple_quarter">4</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="simple_sixteenths" value="simple_sixteenths" checked>
-                            <label for="simple_sixteenths">4×16th</label>
+                            <label for="simple_sixteenths">16+16+16+16</label>
                         </div>
                     </div>
                 </div>
@@ -750,27 +760,27 @@
                     <div class="checkbox-group">
                         <div class="checkbox-item">
                             <input type="checkbox" id="1note_pattern1" value="1note_pattern1" checked>
-                            <label for="1note_pattern1">R+16+R+8</label>
+                            <label for="1note_pattern1">R16+16+R8</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="1note_pattern2" value="1note_pattern2" checked>
-                            <label for="1note_pattern2">16+Dot8R</label>
+                            <label for="1note_pattern2">16+R8.</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="1note_pattern3" value="1note_pattern3" checked>
-                            <label for="1note_pattern3">Dot8R+16</label>
+                            <label for="1note_pattern3">R8.+16</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="1note_pattern4" value="1note_pattern4" checked>
-                            <label for="1note_pattern4">8R+16+R</label>
+                            <label for="1note_pattern4">R8+16+R16</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="1note_pattern5" value="1note_pattern5" checked>
-                            <label for="1note_pattern5">8R+8</label>
+                            <label for="1note_pattern5">R8+8</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="1note_pattern6" value="1note_pattern6" checked>
-                            <label for="1note_pattern6">8+8R</label>
+                            <label for="1note_pattern6">8+R8</label>
                         </div>
                     </div>
                 </div>
@@ -780,47 +790,47 @@
                     <div class="checkbox-group">
                         <div class="checkbox-item">
                             <input type="checkbox" id="2note_pattern1" value="2note_pattern1" checked>
-                            <label for="2note_pattern1">8R+2×16</label>
+                            <label for="2note_pattern1">R8+16+16</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="2note_pattern2" value="2note_pattern2" checked>
-                            <label for="2note_pattern2">2×16+8R</label>
+                            <label for="2note_pattern2">16+16+R8</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="2note_pattern3" value="2note_pattern3" checked>
-                            <label for="2note_pattern3">R+2×16+R</label>
+                            <label for="2note_pattern3">R16+16+16+R16</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="2note_pattern4" value="2note_pattern4" checked>
-                            <label for="2note_pattern4">16+Dot8</label>
+                            <label for="2note_pattern4">16+8.</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="2note_pattern5" value="2note_pattern5" checked>
-                            <label for="2note_pattern5">Dot8+16</label>
+                            <label for="2note_pattern5">8.+16</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="2note_pattern6" value="2note_pattern6" checked>
-                            <label for="2note_pattern6">16+8R+16</label>
+                            <label for="2note_pattern6">16+R8+16</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="2note_pattern7" value="2note_pattern7" checked>
-                            <label for="2note_pattern7">2×8</label>
+                            <label for="2note_pattern7">8+8</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="2note_pattern8" value="2note_pattern8" checked>
-                            <label for="2note_pattern8">R+16+R+16</label>
+                            <label for="2note_pattern8">R16+16+R16+16</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="2note_pattern9" value="2note_pattern9" checked>
-                            <label for="2note_pattern9">16+R+16+R</label>
+                            <label for="2note_pattern9">16+R16+16+R16</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="2note_pattern10" value="2note_pattern10" checked>
-                            <label for="2note_pattern10">16+8+R</label>
+                            <label for="2note_pattern10">16+8+R16</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="2note_pattern11" value="2note_pattern11" checked>
-                            <label for="2note_pattern11">R+16+8</label>
+                            <label for="2note_pattern11">R16+16+8</label>
                         </div>
                     </div>
                 </div>
@@ -830,19 +840,19 @@
                     <div class="checkbox-group">
                         <div class="checkbox-item">
                             <input type="checkbox" id="3note_pattern1" value="3note_pattern1" checked>
-                            <label for="3note_pattern1">R+3×16</label>
+                            <label for="3note_pattern1">R16+16+16+16</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="3note_pattern2" value="3note_pattern2" checked>
-                            <label for="3note_pattern2">3×16+R</label>
+                            <label for="3note_pattern2">16+16+16+R16</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="3note_pattern3" value="3note_pattern3" checked>
-                            <label for="3note_pattern3">2×16+8</label>
+                            <label for="3note_pattern3">16+16+8</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="3note_pattern4" value="3note_pattern4" checked>
-                            <label for="3note_pattern4">8+2×16</label>
+                            <label for="3note_pattern4">8+16+16</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="3note_pattern5" value="3note_pattern5" checked>
@@ -850,7 +860,7 @@
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="3note_pattern6" value="3note_pattern6" checked>
-                            <label for="3note_pattern6">2×16+R+16</label>
+                            <label for="3note_pattern6">16+16+R16+16</label>
                         </div>
                     </div>
                 </div>
@@ -860,31 +870,31 @@
                     <div class="checkbox-group">
                         <div class="checkbox-item">
                             <input type="checkbox" id="triplet_pattern1" value="triplet_pattern1">
-                            <label for="triplet_pattern1">3×8</label>
+                            <label for="triplet_pattern1">3:8+8+8</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="triplet_pattern2" value="triplet_pattern2">
-                            <label for="triplet_pattern2">8+R+8</label>
+                            <label for="triplet_pattern2">3:8+R8+8</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="triplet_pattern3" value="triplet_pattern3">
-                            <label for="triplet_pattern3">R+2×8</label>
+                            <label for="triplet_pattern3">3:R8+8+8</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="triplet_pattern4" value="triplet_pattern4">
-                            <label for="triplet_pattern4">2×8+R</label>
+                            <label for="triplet_pattern4">3:8+8+R8</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="triplet_pattern5" value="triplet_pattern5">
-                            <label for="triplet_pattern5">8+2×R</label>
+                            <label for="triplet_pattern5">3:8+R8+R8</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="triplet_pattern6" value="triplet_pattern6">
-                            <label for="triplet_pattern6">R+8+R</label>
+                            <label for="triplet_pattern6">3:R8+8+R8</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="triplet_pattern7" value="triplet_pattern7">
-                            <label for="triplet_pattern7">2×R+8</label>
+                            <label for="triplet_pattern7">3:R8+R8+8</label>
                         </div>
                     </div>
                 </div>
@@ -1036,7 +1046,7 @@ K:C clef=bass
             const selectedPatterns = getSelectedPatterns();
             
             if (selectedPatterns.length === 0) {
-                showStatus('Please select at least one rhythm pattern', 'error');
+                showStatus('Please select at least one rhythm pattern from settings', 'error');
                 return;
             }
 
