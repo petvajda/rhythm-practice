@@ -1072,7 +1072,14 @@ K:C clef=bass
         function getSelectedPatterns() {
             const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
             return Array.from(checkboxes)
-                .filter(cb => cb.id && !cb.id.startsWith('group-')) // Exclude group checkboxes
+                .filter(cb => {
+                    // Only include checkboxes that have a value and it's a valid pattern ID
+                    // Pattern IDs contain 'pattern' or 'simple_' prefix
+                    return cb.value && (
+                        cb.value.includes('pattern') || 
+                        cb.value.startsWith('simple_')
+                    );
+                })
                 .map(cb => cb.value);
         }
 
