@@ -1524,10 +1524,30 @@ K:C clef=bass
 
         // Generate a rhythm automatically on page load
         window.addEventListener('load', () => {
-            // Small delay to ensure ABCJS is fully loaded
-            setTimeout(() => {
-                generateRhythm();
-            }, 100);
+            // Wait for ABCJS to be fully loaded
+            const tryGenerate = () => {
+                if (typeof ABCJS !== 'undefined') {
+                    try {
+                        generateRhythm();
+                    } catch (error) {
+                        console.error('Auto-generate failed:', error);
+                        // Retry once after a longer delay
+                        setTimeout(() => {
+                            try {
+                                generateRhythm();
+                            } catch (e) {
+                                console.error('Auto-generate retry failed:', e);
+                            }
+                        }, 500);
+                    }
+                } else {
+                    // ABCJS not loaded yet, wait and retry
+                    setTimeout(tryGenerate, 100);
+                }
+            };
+            
+            // Start trying after a short delay
+            setTimeout(tryGenerate, 150);
         });
 
         // PWA installation handling (no Service Worker needed for basic PWA functionality)
