@@ -647,6 +647,39 @@
             background: rgba(255, 255, 255, 0.15);
         }
         
+        .level-button {
+            position: absolute;
+            top: 50%;
+            left: 16px;
+            transform: translateY(-50%);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            transition: all 0.2s;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .level-button:active {
+            transform: translateY(-50%) scale(0.95);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .level-button.active {
+            background: linear-gradient(135deg, var(--accent-primary), #ff6699);
+            border-color: var(--accent-primary);
+        }
+        
         .nav-button svg {
             width: 24px;
             height: 24px;
@@ -658,6 +691,11 @@
 <body>
     <div class="container">
         <div class="header">
+            <!-- Level Button -->
+            <button class="level-button" id="levelButton" onclick="toggleToLevels()" aria-label="Levels">
+                L-
+            </button>
+            
             <h1>Rhythm Practice</h1>
             <p>Generate random rhythm exercises</p>
             
@@ -946,6 +984,17 @@
                 </div>
             </div>
             </div>
+            
+            <!-- Page 3: Level Selection -->
+            <div id="page3" class="page">
+                <div class="control-panel">
+                    <div class="panel-header">Select Difficulty Level</div>
+                    
+                    <div id="levelsList" style="max-height: calc(100vh - 200px); overflow-y: auto; padding-bottom: 20px;">
+                        <!-- Levels will be dynamically inserted here -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -969,6 +1018,224 @@
             const { outcome } = await deferredPrompt.userChoice;
             deferredPrompt = null;
             document.getElementById('installBanner').classList.remove('show');
+        }
+        
+        // Level system
+        let currentMode = 'custom'; // 'level' or 'custom'
+        let selectedLevel = 1;
+        
+        const levelDefinitions = {
+            1: {
+                name: 'Whole Notes',
+                description: 'Simple whole notes and whole rests. The most basic rhythm patterns.',
+                patterns: ['z4', 'E,4']
+            },
+            2: {
+                name: 'Half Notes',
+                description: 'Half notes in different combinations. Building blocks for rhythm.',
+                patterns: ['E,2E,2', 'z2E,2', 'E,2z2']
+            },
+            3: {
+                name: 'Quarter Notes',
+                description: 'Quarter note patterns with rests. Foundation of beat subdivision.',
+                patterns: ['E,E,E,E,', 'zE,E,E,', 'E,E,E,z', 'E,E,zE,', 'E,zE,z', 'E,zE,E,', 'zE,E,z', 'zE,zE,']
+            },
+            4: {
+                name: '1-Note Patterns',
+                description: 'Single note with various rest combinations per beat.',
+                patterns: ['zE,z2', 'E,z3', 'z3E,', 'z2E,z', 'z2E,2', 'E,2z2']
+            },
+            5: {
+                name: '2-Note Patterns',
+                description: 'Two notes per beat with different rhythmic combinations.',
+                patterns: ['z2E,E,', 'E,E,z2', 'zE,E,z', 'E,E,3', 'E,3E,', 'E,z2E,', 'E,2E,2', 'zE,zE,', 'E,zE,z', 'E,E,2z', 'zE,E,2']
+            },
+            6: {
+                name: '3-Note Patterns',
+                description: 'Three notes per beat. More complex rhythmic cells.',
+                patterns: ['zE,E,E,', 'E,E,E,z', 'E,E,E,2', 'E,2E,E,', 'E,E,2E,', 'E,E,zE,']
+            },
+            7: {
+                name: 'Triplets',
+                description: 'Eighth note triplets with and without rests.',
+                patterns: ['(3E,2E,2E,2', '(3E,2z2E,2', '(3z2E,2E,2', '(3E,2E,2z2', '(3E,2z2z2', '(3z2E,2z2', '(3z2z2E,2']
+            },
+            8: {
+                name: 'Simple + 1-Note Combined',
+                description: 'Mixing whole notes, half notes, quarter notes, and 1-note patterns.',
+                patterns: ['z4', 'E,4', 'E,2E,2', 'z2E,2', 'E,2z2', 'E,E,E,E,', 'zE,z2', 'E,z3', 'z3E,', 'z2E,z', 'z2E,2', 'E,2z2']
+            },
+            9: {
+                name: 'All Patterns Combined',
+                description: 'Complete pattern vocabulary from Levels 1-7.',
+                patterns: ['z4', 'E,4', 'E,2E,2', 'z2E,2', 'E,2z2', 'E,E,E,E,', 'zE,E,E,', 'E,E,E,z', 'E,E,zE,', 'E,zE,z', 'E,zE,E,', 'zE,E,z', 'zE,zE,', 'zE,z2', 'E,z3', 'z3E,', 'z2E,z', 'z2E,2', 'E,2z2', 'z2E,E,', 'E,E,z2', 'zE,E,z', 'E,E,3', 'E,3E,', 'E,z2E,', 'zE,zE,', 'E,zE,z', 'E,E,2z', 'zE,E,2', 'zE,E,E,', 'E,E,E,z', 'E,E,E,2', 'E,2E,E,', 'E,E,2E,', 'E,E,zE,', '(3E,2E,2E,2', '(3E,2z2E,2', '(3z2E,2E,2', '(3E,2E,2z2', '(3E,2z2z2', '(3z2E,2z2', '(3z2z2E,2']
+            },
+            10: {
+                name: 'Review',
+                description: 'Comprehensive review using all patterns from Levels 1-7.',
+                patterns: ['z4', 'E,4', 'E,2E,2', 'z2E,2', 'E,2z2', 'E,E,E,E,', 'zE,E,E,', 'E,E,E,z', 'E,E,zE,', 'E,zE,z', 'E,zE,E,', 'zE,E,z', 'zE,zE,', 'zE,z2', 'E,z3', 'z3E,', 'z2E,z', 'z2E,2', 'E,2z2', 'z2E,E,', 'E,E,z2', 'zE,E,z', 'E,E,3', 'E,3E,', 'E,z2E,', 'zE,zE,', 'E,zE,z', 'E,E,2z', 'zE,E,2', 'zE,E,E,', 'E,E,E,z', 'E,E,E,2', 'E,2E,E,', 'E,E,2E,', 'E,E,zE,', '(3E,2E,2E,2', '(3E,2z2E,2', '(3z2E,2E,2', '(3E,2E,2z2', '(3E,2z2z2', '(3z2E,2z2', '(3z2z2E,2']
+            }
+        };
+        
+        // Levels 11-20 use same patterns as level 10
+        for (let i = 11; i <= 20; i++) {
+            levelDefinitions[i] = {
+                name: `Extended Practice`,
+                description: `Extended practice using all pattern types. User controls bar count.`,
+                patterns: levelDefinitions[10].patterns
+            };
+        }
+        
+        function renderLevelsList() {
+            const container = document.getElementById('levelsList');
+            container.innerHTML = '';
+            
+            for (let level = 1; level <= 20; level++) {
+                const def = levelDefinitions[level];
+                
+                const levelCard = document.createElement('div');
+                levelCard.style.cssText = `
+                    background: var(--bg-tertiary);
+                    border: 1px solid var(--border);
+                    border-left: 4px solid var(--accent-primary);
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 16px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                `;
+                
+                if (currentMode === 'level' && selectedLevel === level) {
+                    levelCard.style.background = 'linear-gradient(135deg, rgba(255, 51, 102, 0.2), rgba(255, 102, 153, 0.1))';
+                    levelCard.style.borderLeftColor = 'var(--accent-primary)';
+                    levelCard.style.borderLeftWidth = '6px';
+                }
+                
+                levelCard.onclick = () => selectLevel(level);
+                
+                // Header
+                const header = document.createElement('div');
+                header.style.marginBottom = '8px';
+                
+                const title = document.createElement('h3');
+                title.textContent = `Level ${level}: ${def.name}`;
+                title.style.cssText = `
+                    font-size: 16px;
+                    font-weight: 700;
+                    color: var(--accent-primary);
+                    margin-bottom: 4px;
+                `;
+                
+                const description = document.createElement('p');
+                description.textContent = def.description;
+                description.style.cssText = `
+                    font-size: 13px;
+                    color: var(--text-secondary);
+                    line-height: 1.5;
+                    margin-bottom: 8px;
+                `;
+                
+                const patternCount = document.createElement('div');
+                patternCount.textContent = `${def.patterns.length} patterns`;
+                patternCount.style.cssText = `
+                    font-size: 12px;
+                    color: var(--text-tertiary);
+                    font-weight: 600;
+                    margin-bottom: 12px;
+                `;
+                
+                header.appendChild(title);
+                header.appendChild(description);
+                header.appendChild(patternCount);
+                
+                // ABC Preview
+                const previewDiv = document.createElement('div');
+                previewDiv.id = `preview-${level}`;
+                previewDiv.style.cssText = `
+                    background: var(--bg-secondary);
+                    border: 1px solid var(--border);
+                    padding: 12px 8px;
+                    border-radius: 6px;
+                `;
+                
+                levelCard.appendChild(header);
+                levelCard.appendChild(previewDiv);
+                container.appendChild(levelCard);
+                
+                // Render ABC notation (first 4 patterns)
+                const examplePatterns = def.patterns.slice(0, Math.min(4, def.patterns.length));
+                const abc = `X:${level}
+M:4/4
+L:1/16
+K:C clef=bass
+${examplePatterns.join(' | ')}|]`;
+                
+                setTimeout(() => {
+                    ABCJS.renderAbc(`preview-${level}`, abc, {
+                        responsive: 'resize',
+                        scale: 0.75,
+                        staffwidth: window.innerWidth - 140,
+                        add_classes: true
+                    });
+                }, 50 * level); // Stagger rendering
+            }
+        }
+        
+        function selectLevel(level) {
+            selectedLevel = level;
+            currentMode = 'level';
+            updateLevelButton();
+            
+            // Go back to page 1
+            const page1 = document.getElementById('page1');
+            const page3 = document.getElementById('page3');
+            const navButton = document.getElementById('navButton');
+            
+            page3.classList.remove('active');
+            page1.classList.add('active');
+            currentPage = 1;
+            navButton.style.display = 'flex'; // Show button again
+            navButton.innerHTML = '<span style="color: white; font-size: 20px; font-weight: bold; line-height: 1;">⋯</span>';
+            
+            // Auto-generate new rhythm
+            generateRhythm();
+        }
+        
+        function updateLevelButton() {
+            const btn = document.getElementById('levelButton');
+            if (currentMode === 'level') {
+                btn.textContent = 'L' + selectedLevel;
+                btn.classList.add('active');
+            } else {
+                btn.textContent = 'L-';
+                btn.classList.remove('active');
+            }
+        }
+        
+        function toggleToLevels() {
+            const page1 = document.getElementById('page1');
+            const page2 = document.getElementById('page2');
+            const page3 = document.getElementById('page3');
+            const navButton = document.getElementById('navButton');
+            
+            if (currentPage === 3) {
+                // Confirm before closing
+                if (confirm('Close level selection and return to practice?')) {
+                    page3.classList.remove('active');
+                    page1.classList.add('active');
+                    currentPage = 1;
+                    navButton.style.display = 'flex'; // Show button again
+                    navButton.innerHTML = '<span style="color: white; font-size: 20px; font-weight: bold; line-height: 1;">⋯</span>';
+                }
+            } else {
+                // Go to page 3
+                page1.classList.remove('active');
+                page2.classList.remove('active');
+                page3.classList.add('active');
+                currentPage = 3;
+                navButton.style.display = 'none'; // Hide nav button on Page 3
+                renderLevelsList();
+            }
         }
 
         // No initialization needed for Web Audio API (built-in)
@@ -1080,6 +1347,7 @@ K:C clef=bass
         function togglePage() {
             const page1 = document.getElementById('page1');
             const page2 = document.getElementById('page2');
+            const page3 = document.getElementById('page3');
             const navButton = document.getElementById('navButton');
             
             if (currentPage === 1) {
@@ -1087,11 +1355,29 @@ K:C clef=bass
                 page2.classList.add('active');
                 navButton.innerHTML = '<span style="color: white; font-size: 24px; font-weight: bold; line-height: 1;">←</span>';
                 currentPage = 2;
+            } else if (currentPage === 3) {
+                // If on page 3, go back to page 1 with confirmation
+                if (confirm('Close level selection and return to practice?')) {
+                    page3.classList.remove('active');
+                    page1.classList.add('active');
+                    navButton.style.display = 'flex'; // Show button again
+                    navButton.innerHTML = '<span style="color: white; font-size: 20px; font-weight: bold; line-height: 1;">⋯</span>';
+                    currentPage = 1;
+                }
             } else {
+                // Closing page 2 (custom patterns) - switch to custom mode and generate
+                // Switch to custom mode
+                currentMode = 'custom';
+                updateLevelButton();
+                
+                // Close page 2
                 page2.classList.remove('active');
                 page1.classList.add('active');
                 navButton.innerHTML = '<span style="color: white; font-size: 20px; font-weight: bold; line-height: 1;">⋯</span>';
                 currentPage = 1;
+                
+                // Generate new rhythm with selected patterns
+                generateRhythm();
             }
         }
         
@@ -1114,17 +1400,24 @@ K:C clef=bass
         }
 
         function getSelectedPatterns() {
-            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
-            return Array.from(checkboxes)
-                .filter(cb => {
-                    // Only include checkboxes that have a value and it's a valid pattern ID
-                    // Pattern IDs contain 'pattern' or 'simple_' prefix
-                    return cb.value && (
-                        cb.value.includes('pattern') || 
-                        cb.value.startsWith('simple_')
-                    );
-                })
-                .map(cb => cb.value);
+            if (currentMode === 'level') {
+                // Use patterns from selected level (already ABC notation)
+                return levelDefinitions[selectedLevel].patterns;
+            } else {
+                // Get patterns from checkboxes (need to convert to ABC)
+                const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+                const patternIds = Array.from(checkboxes)
+                    .filter(cb => {
+                        return cb.value && (
+                            cb.value.includes('pattern') || 
+                            cb.value.startsWith('simple_')
+                        );
+                    })
+                    .map(cb => cb.value);
+                
+                // Convert pattern IDs to ABC notation
+                return patternIds.map(id => rhythmPatterns[id].abc);
+            }
         }
 
         function generateRhythm() {
@@ -1155,13 +1448,7 @@ K:C clef=bass
                 let barPatterns = [];
                 for (let j = 0; j < 4; j++) {
                     const randomPattern = selectedPatterns[Math.floor(Math.random() * selectedPatterns.length)];
-                    const pattern = rhythmPatterns[randomPattern];
-                    if (!pattern) {
-                        console.error('Pattern not found:', randomPattern);
-                        showStatus(`Error: Pattern "${randomPattern}" not found`, 'error');
-                        return;
-                    }
-                    barPatterns.push(pattern.abc);
+                    barPatterns.push(randomPattern); // Already ABC notation from getSelectedPatterns
                 }
                 bars.push(barPatterns.join(' '));
                 currentPatternStructure.push(barPatterns); // Store for redrawing
