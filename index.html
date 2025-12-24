@@ -403,12 +403,26 @@
         /* Status messages */
         .status {
             margin-top: 16px;
-            padding: 14px 16px;
-            border-radius: 10px;
-            font-size: 14px;
+            padding: 0;
+            border-radius: 0;
+            font-size: 16px;
             font-weight: 600;
             text-align: center;
             animation: slideIn 0.3s ease-out;
+            min-height: 20px;
+            transition: none;
+            background: none;
+            border: none;
+        }
+        
+        /* Hide empty status messages unless playing */
+        .status:empty:not(.playing) {
+            display: none;
+        }
+        
+        /* Keep playing status visible even if empty */
+        .status.playing {
+            display: block !important;
         }
         
         @keyframes slideIn {
@@ -423,15 +437,11 @@
         }
         
         .status.success {
-            background: rgba(0, 255, 136, 0.15);
             color: var(--success);
-            border: 1px solid rgba(0, 255, 136, 0.3);
         }
         
         .status.playing {
-            background: rgba(255, 215, 0, 0.15);
             color: var(--playing);
-            border: 1px solid rgba(255, 215, 0, 0.3);
         }
         
         /* Tempo slider */
@@ -748,7 +758,7 @@
                         </div>
                     </div>
                     
-                    <div id="statusMessage"></div>
+                    <div id="statusMessage" class="status"></div>
                 </div>
             </div>
             
@@ -1024,6 +1034,7 @@
         let playbackTimeout = null; // Track the timeout for automatic stop
         let highlightTimeouts = []; // Track all cursor highlight timeouts
         let countInTimeouts = []; // Track count-in display timeouts
+        let countInStartTimeout = null; // Track the timeout that starts playback after count-in
         let visualObj = null; // Store the visual object for cursor animation
         let audioReady = true; // Audio is always ready with Web Audio API
 
@@ -1460,18 +1471,19 @@ K:C clef=bass
             
             // Prevent multiple simultaneous play attempts
             if (isInitiatingPlayback) {
-                console.log('Playback already starting, ignoring duplicate request');
+                console.log('⚠️ Playback already starting, ignoring duplicate request');
                 return;
             }
             
             try {
+                console.log('▶️ Starting playback...');
                 isInitiatingPlayback = true;
                 
                 // Ensure everything is fully stopped first
                 stopPlayback();
                 
-                // Small delay to ensure cleanup is complete
-                await new Promise(resolve => setTimeout(resolve, 50));
+                // Wait for cleanup to complete (increased to 100ms for reliability)
+                await new Promise(resolve => setTimeout(resolve, 100));
                 
                 // Create audio context if needed
                 if (!audioContext) {
@@ -1494,8 +1506,6 @@ K:C clef=bass
                 if (generateButton) {
                     generateButton.disabled = true;
                 }
-                
-                showStatus('Playing...', 'playing');
                 
                 const tempo = parseInt(document.getElementById('tempo').value);
                 const barCount = parseInt(document.getElementById('barCount').value);
@@ -1520,12 +1530,12 @@ K:C clef=bass
                 if (countInEnabled) {
                     const startTime = audioContext.currentTime + 0.1;
                     
-                    // Display count-in numbers
+                    // Display count-in numbers - set initial status once, then just update text
                     showStatus('4', 'playing');
-                    countInTimeouts.push(setTimeout(() => { if (isPlaying) showStatus('3', 'playing'); }, beatDuration * 1000));
-                    countInTimeouts.push(setTimeout(() => { if (isPlaying) showStatus('2', 'playing'); }, beatDuration * 2000));
-                    countInTimeouts.push(setTimeout(() => { if (isPlaying) showStatus('1', 'playing'); }, beatDuration * 3000));
-                    countInTimeouts.push(setTimeout(() => { if (isPlaying) showStatus('Playing...', 'playing'); }, beatDuration * 4000));
+                    countInTimeouts.push(setTimeout(() => { if (isPlaying) updateStatusText('3'); }, beatDuration * 1000));
+                    countInTimeouts.push(setTimeout(() => { if (isPlaying) updateStatusText('2'); }, beatDuration * 2000));
+                    countInTimeouts.push(setTimeout(() => { if (isPlaying) updateStatusText('1'); }, beatDuration * 3000));
+                    countInTimeouts.push(setTimeout(() => { if (isPlaying) updateStatusText('Playing...'); }, beatDuration * 4000));
                     
                     // Schedule audio clicks
                     for (let i = 0; i < 4; i++) {
@@ -1591,11 +1601,12 @@ K:C clef=bass
                 
                 // Start the first iteration after count-in
                 if (countInDelay > 0) {
-                    setTimeout(() => {
+                    countInStartTimeout = setTimeout(() => {
                         if (isPlaying) {
                             playIteration();
                         }
                         isInitiatingPlayback = false; // Reset flag after playback starts
+                        countInStartTimeout = null;
                     }, countInDelay);
                 } else {
                     playIteration();
@@ -1611,6 +1622,8 @@ K:C clef=bass
         }
         
         function stopPlayback() {
+            console.log('stopPlayback called - isPlaying:', isPlaying, 'isInitiating:', isInitiatingPlayback);
+            
             // Reset flags
             isPlaying = false;
             isInitiatingPlayback = false;
@@ -1627,14 +1640,26 @@ K:C clef=bass
             countInTimeouts.forEach(timeout => clearTimeout(timeout));
             countInTimeouts = [];
             
+            // Clear count-in start timeout (prevents playback from starting after count-in if stopped)
+            if (countInStartTimeout) {
+                clearTimeout(countInStartTimeout);
+                countInStartTimeout = null;
+            }
+            
             // Stop all scheduled oscillators immediately
             if (audioContext) {
                 const now = audioContext.currentTime;
                 scheduledSources.forEach(source => {
                     try {
+                        // Try to stop at current time
                         source.stop(now);
                     } catch (e) {
-                        // Already stopped
+                        // Already stopped or errored, try to disconnect
+                        try {
+                            source.disconnect();
+                        } catch (disconnectError) {
+                            // Already disconnected
+                        }
                     }
                 });
             }
@@ -1675,6 +1700,17 @@ K:C clef=bass
                     statusDiv.className = 'status';
                 }, 3000);
             }
+        }
+        
+        // Update status text smoothly without resetting animation
+        function updateStatusText(message) {
+            const statusDiv = document.getElementById('statusMessage');
+            // Ensure 'playing' class is maintained
+            if (!statusDiv.classList.contains('playing')) {
+                statusDiv.className = 'status playing';
+            }
+            // Use innerHTML to ensure proper rendering, add nbsp if empty to maintain height
+            statusDiv.innerHTML = message || '&nbsp;';
         }
 
         // Handle window resize for responsive music rendering
