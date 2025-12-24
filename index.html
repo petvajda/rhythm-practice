@@ -356,8 +356,19 @@
             box-shadow: 0 4px 16px rgba(255, 51, 102, 0.3);
         }
         
+        .btn-primary:disabled {
+            background: linear-gradient(135deg, #666, #555);
+            cursor: not-allowed;
+            opacity: 0.5;
+            box-shadow: none;
+        }
+        
         .btn-primary:active {
             transform: scale(0.98);
+        }
+        
+        .btn-primary:disabled:active {
+            transform: none;
         }
         
         .btn-secondary {
@@ -692,7 +703,7 @@
                         </div>
                         
                         <div class="form-group">
-                            <button class="btn-primary" onclick="generateRhythm()" style="width: 100%; margin: 0;">
+                            <button id="generateButton" class="btn-primary" onclick="generateRhythm()" style="width: 100%; margin: 0;">
                                 Generate
                             </button>
                         </div>
@@ -1006,6 +1017,7 @@
         let currentABC = '';
         let audioContext = null;
         let isPlaying = false;
+        let isInitiatingPlayback = false; // Prevent overlapping play attempts
         let currentPage = 1;
         let currentPatternStructure = []; // Store the pattern structure for redrawing
         let scheduledSources = []; // Track all scheduled audio sources for stopping
@@ -1446,7 +1458,21 @@ K:C clef=bass
                 return;
             }
             
+            // Prevent multiple simultaneous play attempts
+            if (isInitiatingPlayback) {
+                console.log('Playback already starting, ignoring duplicate request');
+                return;
+            }
+            
             try {
+                isInitiatingPlayback = true;
+                
+                // Ensure everything is fully stopped first
+                stopPlayback();
+                
+                // Small delay to ensure cleanup is complete
+                await new Promise(resolve => setTimeout(resolve, 50));
+                
                 // Create audio context if needed
                 if (!audioContext) {
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -1462,6 +1488,12 @@ K:C clef=bass
                 // Change button to "Stop"
                 const playButton = document.querySelector('.btn-play');
                 playButton.innerHTML = '⬛ Stop';
+                
+                // Disable generate button during playback
+                const generateButton = document.getElementById('generateButton');
+                if (generateButton) {
+                    generateButton.disabled = true;
+                }
                 
                 showStatus('Playing...', 'playing');
                 
@@ -1563,19 +1595,26 @@ K:C clef=bass
                         if (isPlaying) {
                             playIteration();
                         }
+                        isInitiatingPlayback = false; // Reset flag after playback starts
                     }, countInDelay);
                 } else {
                     playIteration();
+                    isInitiatingPlayback = false; // Reset flag after playback starts
                 }
                 
             } catch (error) {
                 console.error("Play error:", error);
+                isInitiatingPlayback = false; // Reset flag on error
                 stopPlayback();
                 showStatus('Error playing: ' + error.message, 'error');
             }
         }
         
         function stopPlayback() {
+            // Reset flags
+            isPlaying = false;
+            isInitiatingPlayback = false;
+            
             // Clear all note highlights
             const allNotes = document.querySelectorAll('.abcjs-note');
             allNotes.forEach(note => note.classList.remove('abcjs-cursor'));
@@ -1607,7 +1646,6 @@ K:C clef=bass
                 playbackTimeout = null;
             }
             
-            isPlaying = false;
             const musicDisplay = document.getElementById('musicDisplay');
             musicDisplay.classList.remove('playing');
             
@@ -1615,6 +1653,12 @@ K:C clef=bass
             const playButton = document.querySelector('.btn-play');
             if (playButton) {
                 playButton.innerHTML = '▶ Play';
+            }
+            
+            // Re-enable generate button
+            const generateButton = document.getElementById('generateButton');
+            if (generateButton) {
+                generateButton.disabled = false;
             }
             
             showStatus('Playback stopped', 'success');
