@@ -381,6 +381,7 @@
             justify-content: center;
             font-size: 18px;
             font-weight: 700;
+            align-self: flex-start;
         }
         
         /* Status messages */
@@ -941,6 +942,11 @@
             deferredPrompt = null;
             document.getElementById('installBanner').classList.remove('show');
         }
+
+        // No initialization needed for Web Audio API (built-in)
+        async function initializeBass() {
+            console.log("✅ Using Web Audio API (no loading required)");
+        }
         
         // Rhythm patterns database - each pattern = exactly 4 sixteenths (1 quarter note)
         // ABC notation uses L:1/16 so numbers represent sixteenth note durations
@@ -997,7 +1003,10 @@
         let currentPatternStructure = []; // Store the pattern structure for redrawing
         let scheduledSources = []; // Track all scheduled audio sources for stopping
         let playbackTimeout = null; // Track the timeout for automatic stop
+        let highlightTimeouts = []; // Track all cursor highlight timeouts
+        let countInTimeouts = []; // Track count-in display timeouts
         let visualObj = null; // Store the visual object for cursor animation
+        let audioReady = true; // Audio is always ready with Web Audio API
 
         function redrawWithNewNote() {
             // Only redraw if we have a current pattern
@@ -1266,26 +1275,95 @@ K:C clef=bass
             return frequencies[pitch] || 82.41; // Default to E2
         }
 
-        // Create a bass note sound
+        // Create an improved bass note using Web Audio API
         function createBassNote(ctx, frequency, startTime, duration) {
-            const oscillator = ctx.createOscillator();
+            // Create oscillator for fundamental frequency
+            const osc = ctx.createOscillator();
             const gainNode = ctx.createGain();
+            const filter = ctx.createBiquadFilter();
             
-            oscillator.connect(gainNode);
+            // Bass sound configuration
+            osc.type = 'triangle';
+            osc.frequency.value = frequency;
+            
+            // Low-pass filter to remove harsh highs
+            filter.type = 'lowpass';
+            filter.frequency.value = frequency * 4;
+            filter.Q.value = 1;
+            
+            // Connect: oscillator → filter → gain → destination
+            osc.connect(filter);
+            filter.connect(gainNode);
             gainNode.connect(ctx.destination);
             
-            oscillator.frequency.value = frequency;
-            oscillator.type = 'triangle'; // Triangle wave for bass sound
+            // ADSR envelope for natural sound
+            gainNode.gain.setValueAtTime(0, startTime);
+            gainNode.gain.linearRampToValueAtTime(0.6, startTime + 0.01); // Attack
+            gainNode.gain.exponentialRampToValueAtTime(0.4, startTime + 0.05); // Decay
+            gainNode.gain.setValueAtTime(0.4, startTime + duration * 0.7); // Sustain
+            gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration); // Release
             
-            // Envelope for natural sound
-            gainNode.gain.setValueAtTime(0.6, startTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+            osc.start(startTime);
+            osc.stop(startTime + duration);
             
-            oscillator.start(startTime);
-            oscillator.stop(startTime + duration);
+            scheduledSources.push(osc);
+            return osc;
+        }
+        
+        // Convert frequency to MIDI note number
+        function frequencyToMidi(freq) {
+            // MIDI note number = 12 * log2(freq / 440) + 69
+            // For common bass notes:
+            const notes = {
+                43.65: 41,   // F1
+                49.00: 43,   // G1
+                55.00: 45,   // A1
+                61.74: 47,   // B1
+                65.41: 48,   // C2
+                73.42: 50,   // D2
+                82.41: 52    // E2 (default)
+            };
             
-            scheduledSources.push(oscillator);
-            return oscillator;
+            // Find closest match
+            let closest = 52;
+            let minDiff = Math.abs(freq - 82.41);
+            
+            for (const [f, midi] of Object.entries(notes)) {
+                const diff = Math.abs(freq - parseFloat(f));
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closest = midi;
+                }
+            }
+            
+            return closest;
+        }
+        
+        // Convert frequency to note name (e.g., 82.41 -> "E2")
+        function frequencyToNote(freq) {
+            const notes = {
+                43.65: "F1",   // F,,
+                49.00: "G1",   // G,,
+                55.00: "A1",   // A,,
+                61.74: "B1",   // B,,
+                65.41: "C2",   // C,
+                73.42: "D2",   // D,
+                82.41: "E2"    // E, (default)
+            };
+            
+            // Find closest match
+            let closest = "E2";
+            let minDiff = Math.abs(freq - 82.41);
+            
+            for (const [f, note] of Object.entries(notes)) {
+                const diff = Math.abs(freq - parseFloat(f));
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closest = note;
+                }
+            }
+            
+            return closest;
         }
         
         // Play metronome click
@@ -1362,6 +1440,16 @@ K:C clef=bass
             }
             
             try {
+                // Create audio context if needed
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                // Resume audio context if suspended
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+                
                 isPlaying = true;
                 
                 // Change button to "Stop"
@@ -1385,9 +1473,22 @@ K:C clef=bass
                 const beatDuration = 60 / tempo;
                 let countInDelay = 0;
                 
+                // Clear any previous count-in timeouts
+                countInTimeouts.forEach(timeout => clearTimeout(timeout));
+                countInTimeouts = [];
+                
                 // Schedule count-in clicks if enabled
                 if (countInEnabled) {
                     const startTime = audioContext.currentTime + 0.1;
+                    
+                    // Display count-in numbers
+                    showStatus('4', 'playing');
+                    countInTimeouts.push(setTimeout(() => { if (isPlaying) showStatus('3', 'playing'); }, beatDuration * 1000));
+                    countInTimeouts.push(setTimeout(() => { if (isPlaying) showStatus('2', 'playing'); }, beatDuration * 2000));
+                    countInTimeouts.push(setTimeout(() => { if (isPlaying) showStatus('1', 'playing'); }, beatDuration * 3000));
+                    countInTimeouts.push(setTimeout(() => { if (isPlaying) showStatus('Playing...', 'playing'); }, beatDuration * 4000));
+                    
+                    // Schedule audio clicks
                     for (let i = 0; i < 4; i++) {
                         const clickTime = startTime + (i * beatDuration);
                         const isDownbeat = (i === 0);
@@ -1395,11 +1496,17 @@ K:C clef=bass
                     }
                     // Delay the rhythm playback by 4 beats
                     countInDelay = 4 * beatDuration * 1000;
+                } else {
+                    showStatus('Playing...', 'playing');
                 }
                 
                 // Function to play one iteration
                 const playIteration = () => {
                     if (!isPlaying) return;
+                    
+                    // Clear any pending highlight timeouts from previous iteration
+                    highlightTimeouts.forEach(timeout => clearTimeout(timeout));
+                    highlightTimeouts = [];
                     
                     // Clear previous sources (except count-in clicks)
                     const countInSources = scheduledSources.slice(0, countInEnabled ? 4 : 0);
@@ -1417,21 +1524,23 @@ K:C clef=bass
                             const highlightTime = note.start * sixteenthDuration * 1000;
                             const clearTime = (note.start + note.duration) * sixteenthDuration * 1000;
                             
-                            setTimeout(() => {
+                            const highlightTimeout = setTimeout(() => {
                                 if (!isPlaying) return;
                                 const allNotes = document.querySelectorAll('.abcjs-note');
                                 if (allNotes[index]) {
                                     allNotes[index].classList.add('abcjs-cursor');
                                 }
                             }, highlightTime);
+                            highlightTimeouts.push(highlightTimeout);
                             
-                            setTimeout(() => {
+                            const clearTimeout = setTimeout(() => {
                                 if (!isPlaying) return;
                                 const allNotes = document.querySelectorAll('.abcjs-note');
                                 if (allNotes[index]) {
                                     allNotes[index].classList.remove('abcjs-cursor');
                                 }
                             }, clearTime);
+                            highlightTimeouts.push(clearTimeout);
                         });
                     }
                     
@@ -1463,6 +1572,14 @@ K:C clef=bass
             // Clear all note highlights
             const allNotes = document.querySelectorAll('.abcjs-note');
             allNotes.forEach(note => note.classList.remove('abcjs-cursor'));
+            
+            // Clear all highlight timeouts
+            highlightTimeouts.forEach(timeout => clearTimeout(timeout));
+            highlightTimeouts = [];
+            
+            // Clear count-in display timeouts
+            countInTimeouts.forEach(timeout => clearTimeout(timeout));
+            countInTimeouts = [];
             
             // Stop all scheduled oscillators immediately
             if (audioContext) {
