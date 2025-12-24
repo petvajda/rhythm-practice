@@ -40,6 +40,7 @@
             background: var(--bg-primary);
             color: var(--text-primary);
             overflow-x: hidden;
+            width: 100%;
             padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
             min-height: 100vh;
             min-height: -webkit-fill-available;
@@ -47,6 +48,7 @@
         
         html {
             height: -webkit-fill-available;
+            background: var(--bg-primary);
         }
         
         /* Animated background */
@@ -68,6 +70,8 @@
             position: relative;
             z-index: 1;
             max-width: 100%;
+            width: 100%;
+            min-height: 100vh;
             padding: 0;
         }
         
@@ -105,6 +109,7 @@
         /* Main content area */
         .main-content {
             padding: 20px;
+            background: var(--bg-primary);
         }
         
         /* Music display */
@@ -571,10 +576,12 @@
         /* Page navigation */
         .page {
             display: none;
+            background: var(--bg-primary);
         }
         
         .page.active {
             display: block;
+            background: var(--bg-primary);
         }
         
         /* Cursor highlighting for notes during playback */
@@ -1534,7 +1541,7 @@ K:C clef=bass
                             highlightTimeouts.push(highlightTimeout);
                             
                             const clearTimeout = setTimeout(() => {
-                                if (!isPlaying) return;
+                                // Always clear the highlight, even if stopped
                                 const allNotes = document.querySelectorAll('.abcjs-note');
                                 if (allNotes[index]) {
                                     allNotes[index].classList.remove('abcjs-cursor');
