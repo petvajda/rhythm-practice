@@ -2060,6 +2060,13 @@ K:C clef=bass
 
         // Generate a rhythm automatically on page load
         window.addEventListener('load', () => {
+            // Clean up any leftover highlights from previous session
+            const cleanupHighlights = () => {
+                const allNotes = document.querySelectorAll('.abcjs-note');
+                allNotes.forEach(note => note.classList.remove('abcjs-cursor'));
+            };
+            cleanupHighlights();
+            
             // Wait for ABCJS to be fully loaded
             const tryGenerate = () => {
                 if (typeof ABCJS !== 'undefined') {
@@ -2084,6 +2091,15 @@ K:C clef=bass
             
             // Start trying after a short delay
             setTimeout(tryGenerate, 150);
+        });
+        
+        // Clean up highlights when app becomes visible (PWA resuming from background)
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                // Page is now visible - clean up any stray highlights
+                const allNotes = document.querySelectorAll('.abcjs-note');
+                allNotes.forEach(note => note.classList.remove('abcjs-cursor'));
+            }
         });
 
         // PWA installation handling (no Service Worker needed for basic PWA functionality)
