@@ -1212,6 +1212,19 @@ ${examplePatterns.join(' | ')}|]`;
             }
         }
         
+        function closeLevelSelection() {
+            const page1 = document.getElementById('page1');
+            const page3 = document.getElementById('page3');
+            const navButton = document.getElementById('navButton');
+            
+            // Simply close and go back to main screen (no confirmation, no changes)
+            page3.classList.remove('active');
+            page1.classList.add('active');
+            currentPage = 1;
+            navButton.style.display = 'flex'; // Show button again
+            navButton.innerHTML = '<span style="color: white; font-size: 20px; font-weight: bold; line-height: 1;">⋯</span>';
+        }
+        
         function toggleToLevels() {
             const page1 = document.getElementById('page1');
             const page2 = document.getElementById('page2');
@@ -1219,21 +1232,16 @@ ${examplePatterns.join(' | ')}|]`;
             const navButton = document.getElementById('navButton');
             
             if (currentPage === 3) {
-                // Confirm before closing
-                if (confirm('Close level selection and return to practice?')) {
-                    page3.classList.remove('active');
-                    page1.classList.add('active');
-                    currentPage = 1;
-                    navButton.style.display = 'flex'; // Show button again
-                    navButton.innerHTML = '<span style="color: white; font-size: 20px; font-weight: bold; line-height: 1;">⋯</span>';
-                }
+                // Just close without confirmation (user can also use back arrow)
+                closeLevelSelection();
             } else {
                 // Go to page 3
                 page1.classList.remove('active');
                 page2.classList.remove('active');
                 page3.classList.add('active');
                 currentPage = 3;
-                navButton.style.display = 'none'; // Hide nav button on Page 3
+                navButton.style.display = 'flex'; // Show nav button with back arrow
+                navButton.innerHTML = '<span style="color: white; font-size: 24px; font-weight: bold; line-height: 1;">←</span>';
                 renderLevelsList();
             }
         }
@@ -1309,6 +1317,14 @@ ${examplePatterns.join(' | ')}|]`;
             // Only redraw if we have a current pattern
             if (currentPatternStructure.length === 0) return;
             
+            // CRITICAL: Clear all existing note highlights before redrawing
+            const allNotes = document.querySelectorAll('.abcjs-note');
+            allNotes.forEach(note => note.classList.remove('abcjs-cursor'));
+            
+            // Clear any pending highlight timeouts
+            highlightTimeouts.forEach(timeout => clearTimeout(timeout));
+            highlightTimeouts = [];
+            
             const bassNote = document.getElementById('bassNote').value;
             
             let abcNotation = `X:1
@@ -1356,14 +1372,8 @@ K:C clef=bass
                 navButton.innerHTML = '<span style="color: white; font-size: 24px; font-weight: bold; line-height: 1;">←</span>';
                 currentPage = 2;
             } else if (currentPage === 3) {
-                // If on page 3, go back to page 1 with confirmation
-                if (confirm('Close level selection and return to practice?')) {
-                    page3.classList.remove('active');
-                    page1.classList.add('active');
-                    navButton.style.display = 'flex'; // Show button again
-                    navButton.innerHTML = '<span style="color: white; font-size: 20px; font-weight: bold; line-height: 1;">⋯</span>';
-                    currentPage = 1;
-                }
+                // If on page 3, just go back (no confirmation, no changes)
+                closeLevelSelection();
             } else {
                 // Closing page 2 (custom patterns) - switch to custom mode and generate
                 // Switch to custom mode
@@ -1840,6 +1850,10 @@ K:C clef=bass
                 const playIteration = () => {
                     if (!isPlaying) return;
                     
+                    // IMMEDIATELY clear all highlights from previous playback
+                    const allNotes = document.querySelectorAll('.abcjs-note');
+                    allNotes.forEach(note => note.classList.remove('abcjs-cursor'));
+                    
                     // Clear any pending highlight timeouts from previous iteration
                     highlightTimeouts.forEach(timeout => clearTimeout(timeout));
                     highlightTimeouts = [];
@@ -1856,27 +1870,35 @@ K:C clef=bass
                         const { notes } = parseABCNotes(currentABC);
                         const sixteenthDuration = beatDuration / 4;
                         
+                        // Get all note elements ONCE to avoid repeated queries
+                        const allNotes = document.querySelectorAll('.abcjs-note');
+                        console.log(`🎵 Total parsed notes: ${notes.length}, DOM note elements: ${allNotes.length}`);
+                        
                         notes.forEach((note, index) => {
+                            // Skip if index is out of bounds
+                            if (index >= allNotes.length) {
+                                console.warn(`⚠️ Note index ${index} out of bounds (max ${allNotes.length - 1})`);
+                                return;
+                            }
+                            
                             const highlightTime = note.start * sixteenthDuration * 1000;
                             const clearTime = (note.start + note.duration) * sixteenthDuration * 1000;
                             
                             const highlightTimeout = setTimeout(() => {
                                 if (!isPlaying) return;
-                                const allNotes = document.querySelectorAll('.abcjs-note');
-                                if (allNotes[index]) {
+                                if (index < allNotes.length && allNotes[index]) {
                                     allNotes[index].classList.add('abcjs-cursor');
                                 }
                             }, highlightTime);
                             highlightTimeouts.push(highlightTimeout);
                             
-                            const clearTimeout = setTimeout(() => {
+                            const clearHighlightTimeout = setTimeout(() => {
                                 // Always clear the highlight, even if stopped
-                                const allNotes = document.querySelectorAll('.abcjs-note');
-                                if (allNotes[index]) {
+                                if (index < allNotes.length && allNotes[index]) {
                                     allNotes[index].classList.remove('abcjs-cursor');
                                 }
                             }, clearTime);
-                            highlightTimeouts.push(clearTimeout);
+                            highlightTimeouts.push(clearHighlightTimeout);
                         });
                     }
                     
@@ -1915,9 +1937,17 @@ K:C clef=bass
             isPlaying = false;
             isInitiatingPlayback = false;
             
-            // Clear all note highlights
+            // CRITICAL: Clear all note highlights - use multiple methods to ensure cleanup
             const allNotes = document.querySelectorAll('.abcjs-note');
-            allNotes.forEach(note => note.classList.remove('abcjs-cursor'));
+            allNotes.forEach(note => {
+                note.classList.remove('abcjs-cursor');
+                // Also remove any inline styles that might have been added
+                if (note.style.fill) note.style.fill = '';
+            });
+            
+            // Also check for any elements with abcjs-cursor class (belt and suspenders)
+            const cursorElements = document.querySelectorAll('.abcjs-cursor');
+            cursorElements.forEach(el => el.classList.remove('abcjs-cursor'));
             
             // Clear all highlight timeouts
             highlightTimeouts.forEach(timeout => clearTimeout(timeout));
