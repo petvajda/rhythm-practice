@@ -791,7 +791,7 @@
                         
                         <div class="form-group" style="display: flex; align-items: flex-end;">
                             <button class="btn-play" onclick="playRhythm()" style="width: 100%; margin: 0 0 0 16px;">
-                                ▶ Play
+                                ▶
                             </button>
                         </div>
                     </div>
@@ -1794,9 +1794,9 @@ K:C clef=bass
                 
                 isPlaying = true;
                 
-                // Change button to "Stop"
+                // Change button to stop icon
                 const playButton = document.querySelector('.btn-play');
-                playButton.innerHTML = '⬛ Stop';
+                playButton.innerHTML = '⬛';
                 
                 // Disable generate button during playback
                 const generateButton = document.getElementById('generateButton');
@@ -1991,10 +1991,10 @@ K:C clef=bass
             const musicDisplay = document.getElementById('musicDisplay');
             musicDisplay.classList.remove('playing');
             
-            // Change button back to "Play"
+            // Change button back to play icon
             const playButton = document.querySelector('.btn-play');
             if (playButton) {
-                playButton.innerHTML = '▶ Play';
+                playButton.innerHTML = '▶';
             }
             
             // Re-enable generate button
