@@ -686,6 +686,15 @@
             display: block;
             margin: auto;
         }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-tertiary);
+            font-size: 12px;
+            background: var(--bg-primary);
+        }
     </style>
 </head>
 <body>
@@ -697,7 +706,7 @@
             </button>
             
             <h1>Rhythm Practice</h1>
-            <p>Generate random rhythm exercises</p>
+            <p>Feel the grid, learn your patterns</p>
             
             <!-- Settings Button -->
             <button class="nav-button" id="navButton" onclick="togglePage()" aria-label="Settings">
@@ -751,7 +760,7 @@
                         </div>
                         
                         <div class="form-group">
-                            <button id="generateButton" class="btn-primary" onclick="generateRhythm()" style="width: 100%; margin: 0;">
+                            <button id="generateButton" class="btn-primary" onclick="generateRhythm()" style="width: 100%; margin: 0; padding: 16px 20px;">
                                 Generate
                             </button>
                         </div>
@@ -1000,6 +1009,10 @@
     
     <div class="loading" id="loading">
         <div class="spinner"></div>
+    </div>
+    
+    <div class="footer">
+        Copyright © 2025 Peter Vajda. All rights reserved.
     </div>
 
     <script>
