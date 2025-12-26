@@ -631,9 +631,10 @@
             top: 50%;
             right: 16px;
             transform: translateY(-50%);
-            width: 48px;
+            min-width: 52px;
             height: 48px;
-            border-radius: 50%;
+            padding: 0 14px;
+            border-radius: 24px;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -643,6 +644,11 @@
             justify-content: center;
             z-index: 200;
             transition: all 0.2s;
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: white;
+            white-space: nowrap;
         }
         
         .nav-button:active {
@@ -650,14 +656,20 @@
             background: rgba(255, 255, 255, 0.15);
         }
         
+        .nav-button.active {
+            background: linear-gradient(135deg, #E91E63, #ff6699);
+            border-color: #E91E63;
+        }
+        
         .level-button {
             position: absolute;
             top: 50%;
             left: 16px;
             transform: translateY(-50%);
-            width: 48px;
+            min-width: 68px;
             height: 48px;
-            border-radius: 50%;
+            padding: 0 14px;
+            border-radius: 24px;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -667,10 +679,11 @@
             justify-content: center;
             z-index: 200;
             transition: all 0.2s;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 16px;
-            font-weight: bold;
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
             color: white;
+            white-space: nowrap;
         }
         
         .level-button:active {
@@ -696,16 +709,16 @@
         <div class="header">
             <!-- Level Button -->
             <button class="level-button" id="levelButton" onclick="toggleToLevels()" aria-label="Levels">
-                L-
+                Levels
             </button>
             
             <h1>Rhythm Practice</h1>
             <p>Feel the grid, learn your patterns</p>
             <p style="font-size: 10px; color: #666; margin-top: 4px;">© 2025 Peter Vajda</p>
             
-            <!-- Settings Button -->
-            <button class="nav-button" id="navButton" onclick="togglePage()" aria-label="Settings">
-                <span style="color: white; font-size: 20px; font-weight: bold; line-height: 1;">⋯</span>
+            <!-- Patterns Button -->
+            <button class="nav-button" id="navButton" onclick="togglePage()" aria-label="Custom Patterns">
+                Patterns
             </button>
         </div>
         
@@ -1198,7 +1211,8 @@ ${examplePatterns.join(' | ')}|]`;
             page1.classList.add('active');
             currentPage = 1;
             navButton.style.display = 'flex'; // Show button again
-            navButton.innerHTML = '<span style="color: white; font-size: 20px; font-weight: bold; line-height: 1;">⋯</span>';
+            navButton.innerHTML = 'Patterns';
+            updateNavButton(); // Update nav button highlighting based on mode
             
             // Auto-generate new rhythm
             generateRhythm();
@@ -1207,11 +1221,23 @@ ${examplePatterns.join(' | ')}|]`;
         function updateLevelButton() {
             const btn = document.getElementById('levelButton');
             if (currentMode === 'level') {
-                btn.textContent = 'L' + selectedLevel;
+                btn.textContent = 'Level ' + selectedLevel;
                 btn.classList.add('active');
             } else {
-                btn.textContent = 'L-';
+                btn.textContent = 'Levels';
                 btn.classList.remove('active');
+            }
+        }
+        
+        function updateNavButton() {
+            const btn = document.getElementById('navButton');
+            // Only update if we're on the main page (not showing back button)
+            if (currentPage === 1) {
+                if (currentMode === 'custom') {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
             }
         }
         
@@ -1225,7 +1251,8 @@ ${examplePatterns.join(' | ')}|]`;
             page1.classList.add('active');
             currentPage = 1;
             navButton.style.display = 'flex'; // Show button again
-            navButton.innerHTML = '<span style="color: white; font-size: 20px; font-weight: bold; line-height: 1;">⋯</span>';
+            navButton.innerHTML = 'Patterns';
+            updateNavButton(); // Update nav button highlighting based on mode
         }
         
         function toggleToLevels() {
@@ -1244,7 +1271,8 @@ ${examplePatterns.join(' | ')}|]`;
                 page3.classList.add('active');
                 currentPage = 3;
                 navButton.style.display = 'flex'; // Show nav button with back arrow
-                navButton.innerHTML = '<span style="color: white; font-size: 24px; font-weight: bold; line-height: 1;">←</span>';
+                navButton.innerHTML = '← Back';
+                navButton.classList.remove('active'); // Remove highlight (not on patterns page)
                 renderLevelsList();
             }
         }
@@ -1372,7 +1400,8 @@ K:C clef=bass
             if (currentPage === 1) {
                 page1.classList.remove('active');
                 page2.classList.add('active');
-                navButton.innerHTML = '<span style="color: white; font-size: 24px; font-weight: bold; line-height: 1;">←</span>';
+                navButton.innerHTML = '← Back';
+                navButton.classList.add('active'); // Highlight when on patterns page
                 currentPage = 2;
             } else if (currentPage === 3) {
                 // If on page 3, just go back (no confirmation, no changes)
@@ -1386,8 +1415,9 @@ K:C clef=bass
                 // Close page 2
                 page2.classList.remove('active');
                 page1.classList.add('active');
-                navButton.innerHTML = '<span style="color: white; font-size: 20px; font-weight: bold; line-height: 1;">⋯</span>';
+                navButton.innerHTML = 'Patterns';
                 currentPage = 1;
+                updateNavButton(); // Update nav button highlighting based on mode
                 
                 // Generate new rhythm with selected patterns
                 generateRhythm();
@@ -2086,6 +2116,9 @@ K:C clef=bass
                 allNotes.forEach(note => note.classList.remove('abcjs-cursor'));
             };
             cleanupHighlights();
+            
+            // Update button states based on initial mode
+            updateNavButton();
             
             // Wait for ABCJS to be fully loaded
             const tryGenerate = () => {
