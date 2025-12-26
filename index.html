@@ -8,8 +8,8 @@
     <meta name="apple-mobile-web-app-title" content="Rhythm Practice">
     <meta name="theme-color" content="#0a0a0a">
     <title>Rhythm Practice Generator</title>
-    <script src="js/abcjs-min.js" onload="onABCJSLoaded()" onerror="onABCJSError()"></script>
     <script>
+        // Define callback functions BEFORE loading ABCJS
         // This will be called when ABCJS finishes loading
         function onABCJSLoaded() {
             console.log('✅ ABCJS library loaded successfully');
@@ -30,6 +30,8 @@
             }, 500);
         }
     </script>
+    <!-- Load ABCJS library AFTER defining callback functions -->
+    <script src="js/abcjs-min.js" onload="onABCJSLoaded()" onerror="onABCJSError()"></script>
     <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlJoeXRobSBQcmFjdGljZSBHZW5lcmF0b3IiLAogICJzaG9ydF9uYW1lIjogIlJoeXRobSBQcmFjdGljZSIsCiAgImRlc2NyaXB0aW9uIjogIkdlbmVyYXRlIHJhbmRvbSByaHl0aG0gZXhlcmNpc2VzIGZvciBtdXNpYyBwcmFjdGljZSIsCiAgInN0YXJ0X3VybCI6ICIuLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzBhMGEwYSIsCiAgInRoZW1lX2NvbG9yIjogIiMwYTBhMGEiLAogICJvcmllbnRhdGlvbiI6ICJwb3J0cmFpdCIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbCwlM0NzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB2aWV3Qm94PScwIDAgNTEyIDUxMiclM0UlM0NyZWN0IGZpbGw9JyUyMzBhMGEwYScgd2lkdGg9JzUxMicgaGVpZ2h0PSc1MTInLyUzRSUzQ3BhdGggZmlsbD0nJTIzZmYzMzY2JyBkPSdNMjU2IDEyOGM3MC43IDAgMTI4IDU3LjMgMTI4IDEyOHMtNTcuMyAxMjgtMTI4IDEyOC0xMjgtNTcuMy0xMjgtMTI4IDU3LjMtMTI4IDEyOC0xMjhtMC00OGMtOTcuMiAwLTE3NiA3OC44LTE3NiAxNzZzNzguOCAxNzYgMTc2IDE3NiAxNzYtNzguOCAxNzYtMTc2UzM1My4yIDgwIDI1NiA4MHonLyUzRSUzQ2NpcmNsZSBmaWxsPSclMjNmZjMzNjYnIGN4PScyNTYnIGN5PScyNTYnIHI9JzI0Jy8lM0UlM0Mvc3ZnJTNFIiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIiwKICAgICAgInB1cnBvc2UiOiAiYW55IG1hc2thYmxlIgogICAgfQogIF0sCiAgImNhdGVnb3JpZXMiOiBbIm11c2ljIiwgImVkdWNhdGlvbiJdCn0=">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%230a0a0a' width='512' height='512'/><path fill='%23ff3366' d='M256 128c70.7 0 128 57.3 128 128s-57.3 128-128 128-128-57.3-128-128 57.3-128 128-128m0-48c-97.2 0-176 78.8-176 176s78.8 176 176 176 176-78.8 176-176S353.2 80 256 80z'/><circle fill='%23ff3366' cx='256' cy='256' r='24'/></svg>">
     <style>
