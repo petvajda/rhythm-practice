@@ -81,31 +81,49 @@
         .header {
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border);
-            padding: 16px 20px 12px 20px;
+            padding: 12px 20px 10px 20px;
             position: sticky;
             top: 0;
             z-index: 100;
             backdrop-filter: blur(20px);
             background: rgba(26, 26, 26, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .header-text {
+            text-align: center;
+            flex: 1;
         }
         
         .header h1 {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 800;
             letter-spacing: -0.5px;
             background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 4px;
+            margin-bottom: 1px;
             text-align: center;
+            line-height: 1.2;
         }
         
         .header p {
-            font-size: 13px;
+            font-size: 11px;
             color: var(--text-secondary);
             font-weight: 400;
             text-align: center;
+            margin-bottom: 1px;
+            line-height: 1.3;
+        }
+        
+        .header .copyright {
+            font-size: 9px;
+            color: #666;
+            margin-top: 0;
         }
         
         /* Main content area */
@@ -629,11 +647,11 @@
         .nav-button {
             position: absolute;
             top: 50%;
-            right: 16px;
+            right: 8px;
             transform: translateY(-50%);
-            min-width: 52px;
+            width: 95px;
             height: 48px;
-            padding: 0 14px;
+            padding: 0 8px;
             border-radius: 24px;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -664,11 +682,11 @@
         .level-button {
             position: absolute;
             top: 50%;
-            left: 16px;
+            left: 8px;
             transform: translateY(-50%);
-            min-width: 68px;
+            width: 95px;
             height: 48px;
-            padding: 0 14px;
+            padding: 0 8px;
             border-radius: 24px;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -712,9 +730,11 @@
                 Levels
             </button>
             
-            <h1>Rhythm Practice</h1>
-            <p>Feel the grid, learn your patterns</p>
-            <p style="font-size: 10px; color: #666; margin-top: 4px;">© 2025 Peter Vajda</p>
+            <div class="header-text">
+                <h1>Rhythm Practice</h1>
+                <p>Feel the grid, learn your patterns</p>
+                <p class="copyright">© 2025 Peter Vajda</p>
+            </div>
             
             <!-- Patterns Button -->
             <button class="nav-button" id="navButton" onclick="togglePage()" aria-label="Custom Patterns">
