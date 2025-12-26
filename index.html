@@ -1493,6 +1493,12 @@ K:C clef=bass
                 add_classes: true
             })[0];
             
+            // Clean up any highlights after rendering new exercise
+            setTimeout(() => {
+                const allNotes = document.querySelectorAll('.abcjs-note');
+                allNotes.forEach(note => note.classList.remove('abcjs-cursor'));
+            }, 0);
+            
             showStatus('Rhythm generated successfully!', 'success');
         }
 
@@ -1547,6 +1553,8 @@ K:C clef=bass
                             // Apply triplet ratio if this is one of the triplet notes
                             const isTriplet = tripletCount > 0 && notesInToken < tripletCount;
                             const actualDuration = isTriplet ? duration * (2/3) : duration;
+                            
+                            // Just update time - don't add rests to array
                             currentTime += actualDuration;
                             notesInToken++;
                         } else if (char === 'E' || char === 'A' || char === 'D' || char === 'G' || char === 'C' || char === 'F' || char === 'B') {
@@ -1709,7 +1717,7 @@ K:C clef=bass
             oscillator.frequency.value = isDownbeat ? 1200 : 800;
             oscillator.type = 'sine';
             
-            gainNode.gain.setValueAtTime(0.2, time);
+            gainNode.gain.setValueAtTime(0.1, time);
             gainNode.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
             
             oscillator.start(time);
@@ -1754,7 +1762,10 @@ K:C clef=bass
                 }
             }
             
-            return totalDuration * sixteenthDuration;
+            return {
+                totalDuration: totalDuration * sixteenthDuration,
+                audioStartTime: startTime
+            };
         }
 
         async function playRhythm() {
@@ -1866,16 +1877,25 @@ K:C clef=bass
                     scheduledSources = countInSources;
                     
                     // Schedule all audio
-                    const totalDuration = scheduleAudio(tempo, true, barCount);
+                    const { totalDuration, audioStartTime } = scheduleAudio(tempo, true, barCount);
                     
-                    // Highlight notes as they play
+                    // Highlight notes as they play - synced to audioStartTime
                     if (visualObj && visualObj.engraver && visualObj.engraver.staffgroups) {
                         const { notes } = parseABCNotes(currentABC);
                         const sixteenthDuration = beatDuration / 4;
                         
-                        // Get all note elements ONCE to avoid repeated queries
-                        const allNotes = document.querySelectorAll('.abcjs-note');
+                        // Get only actual note elements (not rests)
+                        // ABCJS renders rests with class 'abcjs-rest' and notes with 'abcjs-note'
+                        const allElements = document.querySelectorAll('.abcjs-note');
+                        const allNotes = Array.from(allElements).filter(el => {
+                            // Filter out elements that are rests (they have 'abcjs-rest' class too)
+                            return !el.closest('.abcjs-rest');
+                        });
                         console.log(`🎵 Total parsed notes: ${notes.length}, DOM note elements: ${allNotes.length}`);
+                        
+                        // Calculate when highlights should start relative to NOW
+                        const now = audioContext.currentTime;
+                        const delayUntilAudioStarts = (audioStartTime - now) * 1000; // Convert to ms
                         
                         notes.forEach((note, index) => {
                             // Skip if index is out of bounds
@@ -1884,8 +1904,8 @@ K:C clef=bass
                                 return;
                             }
                             
-                            const highlightTime = note.start * sixteenthDuration * 1000;
-                            const clearTime = (note.start + note.duration) * sixteenthDuration * 1000;
+                            const highlightTime = delayUntilAudioStarts + (note.start * sixteenthDuration * 1000);
+                            const clearTime = delayUntilAudioStarts + ((note.start + note.duration) * sixteenthDuration * 1000);
                             
                             const highlightTimeout = setTimeout(() => {
                                 if (!isPlaying) return;
@@ -2092,7 +2112,7 @@ K:C clef=bass
             // Start trying after a short delay
             setTimeout(tryGenerate, 150);
         });
-        
+
         // Clean up highlights when app becomes visible (PWA resuming from background)
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
