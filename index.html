@@ -1618,6 +1618,12 @@ K:C clef=bass
                 allNotes.forEach(note => note.classList.remove('abcjs-cursor'));
             }, 0);
             
+            // Enable play button now that we have a rhythm
+            const playButton = document.getElementById('playButton');
+            if (playButton && audioReady) {
+                playButton.disabled = false;
+            }
+            
             showStatus('Rhythm generated successfully!', 'success');
         }
 
@@ -1630,7 +1636,7 @@ K:C clef=bass
             }
             
             // Check if audio is ready
-            if (!audioReady || !midiSynth) {
+            if (!audioReady) {
                 showStatus('Audio still loading, please wait...', 'error');
                 return;
             }
