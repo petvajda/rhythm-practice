@@ -512,20 +512,27 @@
 
             async initAudio() {
                 try {
-                    // Load only the 3 drum samples we need from FluidR3_GM soundfont
-                    // Using acoustic_grand_piano as the base (actual drum kit soundfonts use different URLs)
-                    const soundfontBase = 'https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/';
+                    // Load Google Magenta drum samples
+                    // These are high-quality, web-optimized drum sounds
+                    const magentaBase = 'https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus/';
                     
-                    // Create sampler with just the notes we need
+                    // Create sampler with actual drum samples
                     this.drumSampler = new Tone.Sampler({
                         urls: {
-                            "C1": "C1.mp3",   // MIDI note 36 - Bass Drum (Kick)
-                            "D1": "D1.mp3",   // MIDI note 38 - Snare
-                            "F1": "F1.mp3"    // MIDI note 41 - We'll use this for hi-hat
+                            "C2": "kick.mp3",      // Kick drum
+                            "D2": "snare.mp3",     // Snare drum
+                            "F#2": "hihat.mp3"     // Hi-hat
                         },
-                        baseUrl: soundfontBase + "acoustic_grand_piano-mp3/",
+                        baseUrl: magentaBase,
                         onload: () => {
-                            console.log("MIDI samples loaded successfully");
+                            console.log("Magenta drum samples loaded successfully");
+                            this.audioReady = true;
+                            this.hideLoading();
+                        },
+                        onerror: (error) => {
+                            console.error("Error loading Magenta samples:", error);
+                            // Fallback to synthesis
+                            this.createSyntheticDrums();
                             this.audioReady = true;
                             this.hideLoading();
                         }
@@ -700,12 +707,12 @@
             }
 
             playMidiNote(midiNote, time, duration) {
-                // MIDI drum note mapping using available piano samples
-                // Note: We're using piano samples as placeholders
+                // MIDI drum note mapping to Magenta samples
+                // Using standard pitches for drum sample playback
                 const noteMap = {
-                    36: 'C1',   // Bass Drum (Kick) - low C
-                    38: 'D1',   // Snare - D 
-                    42: 'F1'    // Hi-Hat - F (high pitched)
+                    36: 'C2',   // Kick drum - MIDI note 36
+                    38: 'D2',   // Snare drum - MIDI note 38
+                    42: 'F#2'   // Hi-hat - MIDI note 42
                 };
                 
                 const note = noteMap[midiNote];
