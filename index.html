@@ -1703,6 +1703,7 @@ K:C clef=bass
                         midiTranspose: 0,
                         chordsOff: true,
                         voicesOff: false,
+                        soundFontUrl: "soundfonts/", // Use local soundfonts
                         // Callback for visual feedback
                         sequenceCallback: function(ev) {
                             if (ev && ev.elements && ev.elements.length > 0) {
@@ -1982,47 +1983,15 @@ K:C clef=bass
                     console.log('🔊 Audio context created:', audioContext.state);
                 }
                 
-                // Note: Don't resume here - browser requires user gesture
-                // We'll resume when user clicks the play button
-                if (audioContext.state === 'suspended') {
-                    console.log('ℹ️ Audio context suspended (will resume on play button click)');
-                }
-                
-                showStatus('Initializing MIDI synthesizer...', 'info');
-                
-                // Create the MIDI synthesizer
-                midiSynth = new window.ABCJS.synth.CreateSynth();
-                console.log('🎹 MIDI synthesizer created');
-                
-                // Initialize with local soundfont path
-                await midiSynth.init({
-                    audioContext: audioContext,
-                    visualObj: null,
-                    options: {
-                        soundFontUrl: "soundfonts/",
-                        // Use locally hosted soundfonts
-                    }
-                });
-                
-                console.log('⚙️ MIDI synthesizer initialized');
-                
-                showStatus('Loading soundfont...', 'info');
-                
-                // Prime the synthesizer - this downloads the bass guitar soundfont
-                await midiSynth.prime();
-                
-                console.log('🎼 Soundfont loaded and primed');
+                // Note: We'll initialize MIDI synth when play is clicked
+                // ABCJS requires a visualObj (the rendered music) to initialize
+                console.log('ℹ️ MIDI synth will be created on first playback');
                 
                 // Mark as ready
                 audioReady = true;
                 
-                // Enable play button
-                if (playButton) {
-                    playButton.disabled = false;
-                }
-                
-                console.log('✅ MIDI synthesizer fully ready!');
-                showStatus('Ready to play! 🎸', 'success');
+                console.log('✅ Audio system ready!');
+                showStatus('Generate a rhythm to start!', 'success');
                 
             } catch (error) {
                 console.error('❌ Failed to initialize MIDI:', error);
