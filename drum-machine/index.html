@@ -1,1 +1,737 @@
-Draft
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Grid Beats</title>
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkdyaWQgQmVhdHMiLAogICJzaG9ydF9uYW1lIjogIkdyaWQgQmVhdHMiLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJvcmllbnRhdGlvbiI6ICJsYW5kc2NhcGUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwYTBhMGEiLAogICJ0aGVtZV9jb2xvciI6ICIjMGEwYTBhIgp9">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Mono:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --neon-cyan: #00fff5;
+            --neon-pink: #ff006e;
+            --neon-yellow: #ffbe0b;
+            --bg-dark: #0a0a0a;
+            --bg-darker: #050505;
+            --grid-line: #1a1a1a;
+        }
+
+        body {
+            background: var(--bg-dark);
+            font-family: 'Space Mono', monospace;
+            color: var(--neon-cyan);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Animated background grid */
+        body::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.3;
+            animation: gridScroll 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes gridScroll {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        /* Glow effects */
+        @keyframes pulseGlow {
+            0%, 100% { filter: drop-shadow(0 0 8px currentColor); }
+            50% { filter: drop-shadow(0 0 20px currentColor); }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 100%;
+            padding: clamp(12px, 3vw, 24px);
+            display: flex;
+            flex-direction: column;
+            gap: clamp(16px, 3vh, 32px);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: clamp(8px, 2vh, 16px);
+            background: linear-gradient(135deg, rgba(0, 255, 245, 0.1), rgba(255, 0, 110, 0.1));
+            border: 2px solid var(--neon-cyan);
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 255, 245, 0.3);
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(20px, 4vw, 32px);
+            font-weight: 900;
+            letter-spacing: 3px;
+            background: linear-gradient(45deg, var(--neon-cyan), var(--neon-pink), var(--neon-yellow));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+
+        .tempo-control {
+            display: flex;
+            align-items: center;
+            gap: clamp(8px, 2vw, 16px);
+        }
+
+        .tempo-label {
+            font-size: clamp(12px, 2.5vw, 16px);
+            color: var(--neon-yellow);
+            font-weight: 700;
+            text-shadow: 0 0 10px var(--neon-yellow);
+        }
+
+        .tempo-input {
+            width: clamp(60px, 15vw, 80px);
+            padding: clamp(4px, 1vh, 8px);
+            background: var(--bg-darker);
+            border: 2px solid var(--neon-pink);
+            border-radius: 4px;
+            color: var(--neon-cyan);
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(14px, 3vw, 18px);
+            font-weight: 700;
+            text-align: center;
+            box-shadow: 0 0 15px rgba(255, 0, 110, 0.3);
+        }
+
+        .tempo-input:focus {
+            outline: none;
+            box-shadow: 0 0 25px rgba(255, 0, 110, 0.6);
+        }
+
+        /* Drum Grid */
+        .drum-grid {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(8px, 2vh, 16px);
+            padding: clamp(12px, 2vh, 20px);
+            background: rgba(10, 10, 10, 0.8);
+            border: 2px solid var(--neon-pink);
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(255, 0, 110, 0.2);
+        }
+
+        .drum-row {
+            display: flex;
+            gap: clamp(6px, 1.5vw, 12px);
+            align-items: center;
+        }
+
+        .row-label {
+            width: clamp(50px, 12vw, 80px);
+            font-size: clamp(10px, 2vw, 14px);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--neon-yellow);
+            text-shadow: 0 0 8px var(--neon-yellow);
+        }
+
+        .steps {
+            display: flex;
+            gap: clamp(8px, 2vw, 16px);
+            flex: 1;
+        }
+
+        .step-group {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: clamp(3px, 0.8vw, 6px);
+            flex: 1;
+            padding: clamp(6px, 1.5vw, 12px);
+            background: rgba(0, 255, 245, 0.03);
+            border: 1px solid rgba(0, 255, 245, 0.2);
+            border-radius: 6px;
+            position: relative;
+        }
+
+        .step-group::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 6px;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(0, 255, 245, 0.3), rgba(255, 0, 110, 0.3));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0.5;
+        }
+
+        .step {
+            aspect-ratio: 1;
+            width: 100%;
+            background: var(--bg-darker);
+            border: 2px solid rgba(0, 255, 245, 0.3);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .step::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle, transparent 30%, var(--bg-darker) 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .step:active {
+            transform: scale(0.9);
+        }
+
+        .step.active {
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
+            border-color: var(--neon-yellow);
+            box-shadow: 
+                0 0 20px rgba(0, 255, 245, 0.6),
+                inset 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .step.active::before {
+            opacity: 1;
+        }
+
+        .step.playing {
+            animation: stepPulse 0.1s ease-out;
+            box-shadow: 
+                0 0 30px var(--neon-yellow),
+                inset 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        @keyframes stepPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .step.current-beat {
+            border-color: var(--neon-yellow);
+            box-shadow: 0 0 15px var(--neon-yellow);
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: clamp(12px, 3vw, 24px);
+            justify-content: center;
+            padding: clamp(8px, 2vh, 16px);
+        }
+
+        .control-btn {
+            padding: clamp(12px, 2.5vh, 20px) clamp(24px, 6vw, 48px);
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(14px, 3vw, 20px);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border: 3px solid;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            background: var(--bg-darker);
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .control-btn:hover::before {
+            transform: translateX(100%);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        .play-btn {
+            color: var(--neon-cyan);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 20px rgba(0, 255, 245, 0.4);
+        }
+
+        .play-btn:hover {
+            background: rgba(0, 255, 245, 0.2);
+            box-shadow: 0 0 30px rgba(0, 255, 245, 0.6);
+        }
+
+        .play-btn.playing {
+            color: var(--neon-pink);
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 20px rgba(255, 0, 110, 0.4);
+        }
+
+        .play-btn.playing:hover {
+            background: rgba(255, 0, 110, 0.2);
+            box-shadow: 0 0 30px rgba(255, 0, 110, 0.6);
+        }
+
+        .clear-btn {
+            color: var(--neon-yellow);
+            border-color: var(--neon-yellow);
+            box-shadow: 0 0 20px rgba(255, 190, 11, 0.4);
+        }
+
+        .clear-btn:hover {
+            background: rgba(255, 190, 11, 0.2);
+            box-shadow: 0 0 30px rgba(255, 190, 11, 0.6);
+        }
+
+        /* Portrait mode warning */
+        @media (orientation: portrait) {
+            body::after {
+                content: 'Please rotate your device to landscape mode';
+                position: fixed;
+                inset: 0;
+                background: var(--bg-dark);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 32px;
+                text-align: center;
+                font-size: 20px;
+                font-weight: 700;
+                color: var(--neon-cyan);
+                z-index: 9999;
+            }
+        }
+
+        /* Loading state */
+        .loading-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(16px, 3vw, 24px);
+            color: var(--neon-cyan);
+            text-align: center;
+            z-index: 1000;
+            padding: 24px;
+            background: rgba(10, 10, 10, 0.9);
+            border: 2px solid var(--neon-cyan);
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0, 255, 245, 0.5);
+        }
+
+        .loading-message.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-message" id="loading">Loading sounds...</div>
+
+    <div class="container">
+        <div class="header">
+            <div class="logo">GRID BEATS</div>
+            <div class="tempo-control">
+                <label class="tempo-label">BPM</label>
+                <input type="number" class="tempo-input" id="bpm" value="100" min="40" max="240" step="1">
+            </div>
+        </div>
+
+        <div class="drum-grid">
+            <div class="drum-row" data-sound="kick">
+                <div class="row-label">Kick</div>
+                <div class="steps">
+                    <div class="step-group">
+                        <div class="step" data-step="0"></div>
+                        <div class="step" data-step="1"></div>
+                        <div class="step" data-step="2"></div>
+                        <div class="step" data-step="3"></div>
+                    </div>
+                    <div class="step-group">
+                        <div class="step" data-step="4"></div>
+                        <div class="step" data-step="5"></div>
+                        <div class="step" data-step="6"></div>
+                        <div class="step" data-step="7"></div>
+                    </div>
+                    <div class="step-group">
+                        <div class="step" data-step="8"></div>
+                        <div class="step" data-step="9"></div>
+                        <div class="step" data-step="10"></div>
+                        <div class="step" data-step="11"></div>
+                    </div>
+                    <div class="step-group">
+                        <div class="step" data-step="12"></div>
+                        <div class="step" data-step="13"></div>
+                        <div class="step" data-step="14"></div>
+                        <div class="step" data-step="15"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="drum-row" data-sound="snare">
+                <div class="row-label">Snare</div>
+                <div class="steps">
+                    <div class="step-group">
+                        <div class="step" data-step="0"></div>
+                        <div class="step" data-step="1"></div>
+                        <div class="step" data-step="2"></div>
+                        <div class="step" data-step="3"></div>
+                    </div>
+                    <div class="step-group">
+                        <div class="step" data-step="4"></div>
+                        <div class="step" data-step="5"></div>
+                        <div class="step" data-step="6"></div>
+                        <div class="step" data-step="7"></div>
+                    </div>
+                    <div class="step-group">
+                        <div class="step" data-step="8"></div>
+                        <div class="step" data-step="9"></div>
+                        <div class="step" data-step="10"></div>
+                        <div class="step" data-step="11"></div>
+                    </div>
+                    <div class="step-group">
+                        <div class="step" data-step="12"></div>
+                        <div class="step" data-step="13"></div>
+                        <div class="step" data-step="14"></div>
+                        <div class="step" data-step="15"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="drum-row" data-sound="hihat">
+                <div class="row-label">Hi-Hat</div>
+                <div class="steps">
+                    <div class="step-group">
+                        <div class="step" data-step="0"></div>
+                        <div class="step" data-step="1"></div>
+                        <div class="step" data-step="2"></div>
+                        <div class="step" data-step="3"></div>
+                    </div>
+                    <div class="step-group">
+                        <div class="step" data-step="4"></div>
+                        <div class="step" data-step="5"></div>
+                        <div class="step" data-step="6"></div>
+                        <div class="step" data-step="7"></div>
+                    </div>
+                    <div class="step-group">
+                        <div class="step" data-step="8"></div>
+                        <div class="step" data-step="9"></div>
+                        <div class="step" data-step="10"></div>
+                        <div class="step" data-step="11"></div>
+                    </div>
+                    <div class="step-group">
+                        <div class="step" data-step="12"></div>
+                        <div class="step" data-step="13"></div>
+                        <div class="step" data-step="14"></div>
+                        <div class="step" data-step="15"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn play-btn" id="playBtn">Play</button>
+            <button class="control-btn clear-btn" id="clearBtn">Clear</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.min.js"></script>
+    <script>
+        // Drum Machine App
+        class DrumMachine {
+            constructor() {
+                this.bpm = 100;
+                this.currentStep = 0;
+                this.isPlaying = false;
+                // Default pattern from screenshot
+                this.pattern = {
+                    kick: [true, false, false, false,  false, false, true, false,  true, false, false, false,  false, false, true, false],
+                    snare: [false, false, false, false,  true, false, false, false,  false, false, false, false,  true, false, false, false],
+                    hihat: [true, false, true, false,  true, false, true, false,  true, false, true, false,  true, false, true, false]
+                };
+                
+                this.players = null;
+                this.sequence = null;
+                this.audioReady = false;
+                
+                this.init();
+            }
+
+            async init() {
+                await this.initAudio();
+                this.setupEventListeners();
+                this.loadInitialPattern();
+                this.hideLoading();
+            }
+
+            loadInitialPattern() {
+                // Set visual state for initial pattern
+                Object.keys(this.pattern).forEach(sound => {
+                    const row = document.querySelector(`.drum-row[data-sound="${sound}"]`);
+                    this.pattern[sound].forEach((active, stepIndex) => {
+                        if (active) {
+                            const stepElement = row.querySelector(`.step[data-step="${stepIndex}"]`);
+                            stepElement.classList.add('active');
+                        }
+                    });
+                });
+            }
+
+            async initAudio() {
+                try {
+                    // Initialize Tone.js players with drum samples
+                    this.players = new Tone.Players({
+                        kick: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=',
+                        snare: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=',
+                        hihat: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='
+                    }).toDestination();
+
+                    // Create synthetic drum sounds using Tone.js
+                    this.createSyntheticDrums();
+                    
+                    this.audioReady = true;
+                } catch (error) {
+                    console.error('Audio initialization error:', error);
+                }
+            }
+
+            createSyntheticDrums() {
+                // Create kick drum synth
+                const kickEnv = new Tone.AmplitudeEnvelope({
+                    attack: 0.001,
+                    decay: 0.2,
+                    sustain: 0,
+                    release: 0.2
+                }).toDestination();
+                
+                const kickOsc = new Tone.Oscillator({
+                    frequency: 150
+                }).connect(kickEnv);
+
+                this.kickSynth = (time) => {
+                    kickOsc.frequency.setValueAtTime(150, time);
+                    kickOsc.frequency.exponentialRampToValueAtTime(40, time + 0.1);
+                    kickOsc.start(time);
+                    kickEnv.triggerAttackRelease(0.2, time);
+                    kickOsc.stop(time + 0.3);
+                };
+
+                // Create snare drum synth
+                const snareEnv = new Tone.AmplitudeEnvelope({
+                    attack: 0.001,
+                    decay: 0.15,
+                    sustain: 0,
+                    release: 0.15
+                }).toDestination();
+
+                const snareNoise = new Tone.Noise('white').connect(snareEnv);
+                const snareFilter = new Tone.Filter(3000, 'highpass').toDestination();
+                snareEnv.connect(snareFilter);
+
+                this.snareSynth = (time) => {
+                    snareNoise.start(time);
+                    snareEnv.triggerAttackRelease(0.15, time);
+                    snareNoise.stop(time + 0.2);
+                };
+
+                // Create hi-hat synth
+                const hihatEnv = new Tone.AmplitudeEnvelope({
+                    attack: 0.001,
+                    decay: 0.05,
+                    sustain: 0,
+                    release: 0.05
+                }).toDestination();
+
+                const hihatNoise = new Tone.Noise('white').connect(hihatEnv);
+                const hihatFilter = new Tone.Filter(8000, 'highpass').toDestination();
+                hihatEnv.connect(hihatFilter);
+
+                this.hihatSynth = (time) => {
+                    hihatNoise.start(time);
+                    hihatEnv.triggerAttackRelease(0.05, time);
+                    hihatNoise.stop(time + 0.1);
+                };
+            }
+
+            setupEventListeners() {
+                // Step buttons
+                document.querySelectorAll('.step').forEach(step => {
+                    step.addEventListener('click', (e) => this.toggleStep(e.target));
+                });
+
+                // Play button
+                document.getElementById('playBtn').addEventListener('click', () => this.togglePlay());
+
+                // Clear button
+                document.getElementById('clearBtn').addEventListener('click', () => this.clearPattern());
+
+                // BPM input
+                document.getElementById('bpm').addEventListener('input', (e) => {
+                    const newBpm = parseInt(e.target.value);
+                    if (newBpm >= 40 && newBpm <= 240) {
+                        this.bpm = newBpm;
+                        // Apply tempo change immediately if playing
+                        if (this.isPlaying) {
+                            Tone.Transport.bpm.rampTo(this.bpm, 0.1);
+                        }
+                    }
+                });
+            }
+
+            toggleStep(stepElement) {
+                const row = stepElement.closest('.drum-row');
+                const sound = row.dataset.sound;
+                const stepIndex = parseInt(stepElement.dataset.step);
+                
+                this.pattern[sound][stepIndex] = !this.pattern[sound][stepIndex];
+                stepElement.classList.toggle('active');
+            }
+
+            async togglePlay() {
+                if (!this.audioReady) return;
+
+                if (!this.isPlaying) {
+                    await Tone.start();
+                    this.startPlayback();
+                } else {
+                    this.stopPlayback();
+                }
+            }
+
+            startPlayback() {
+                this.isPlaying = true;
+                document.getElementById('playBtn').classList.add('playing');
+                document.getElementById('playBtn').textContent = 'Stop';
+
+                Tone.Transport.bpm.value = this.bpm;
+                this.currentStep = 0;
+                
+                // Use scheduleRepeat for more stable timing
+                let stepCounter = 0;
+                this.sequence = Tone.Transport.scheduleRepeat((time) => {
+                    const step = stepCounter % 16;
+                    
+                    // Schedule visual updates slightly ahead for smoothness
+                    Tone.Draw.schedule(() => {
+                        this.updateVisualStep(step);
+                    }, time);
+
+                    // Play sounds with precise timing
+                    if (this.pattern.kick[step]) {
+                        this.kickSynth(time);
+                        this.flashStep('kick', step, time);
+                    }
+                    if (this.pattern.snare[step]) {
+                        this.snareSynth(time);
+                        this.flashStep('snare', step, time);
+                    }
+                    if (this.pattern.hihat[step]) {
+                        this.hihatSynth(time);
+                        this.flashStep('hihat', step, time);
+                    }
+                    
+                    stepCounter++;
+                }, '16n', 0);
+
+                Tone.Transport.start();
+            }
+
+            stopPlayback() {
+                this.isPlaying = false;
+                document.getElementById('playBtn').classList.remove('playing');
+                document.getElementById('playBtn').textContent = 'Play';
+
+                if (this.sequence) {
+                    Tone.Transport.clear(this.sequence);
+                    this.sequence = null;
+                }
+                
+                Tone.Transport.stop();
+                Tone.Transport.position = 0;
+                this.clearVisualSteps();
+            }
+
+            updateVisualStep(step) {
+                // Remove current-beat from all steps
+                document.querySelectorAll('.step').forEach(s => {
+                    s.classList.remove('current-beat');
+                });
+
+                // Add current-beat to current step in all rows
+                document.querySelectorAll(`.step[data-step="${step}"]`).forEach(s => {
+                    s.classList.add('current-beat');
+                });
+            }
+
+            flashStep(sound, step, time) {
+                const row = document.querySelector(`.drum-row[data-sound="${sound}"]`);
+                const stepElement = row.querySelector(`.step[data-step="${step}"]`);
+                
+                stepElement.classList.add('playing');
+                setTimeout(() => {
+                    stepElement.classList.remove('playing');
+                }, 100);
+            }
+
+            clearVisualSteps() {
+                document.querySelectorAll('.step').forEach(step => {
+                    step.classList.remove('current-beat', 'playing');
+                });
+            }
+
+            clearPattern() {
+                this.pattern = {
+                    kick: new Array(16).fill(false),
+                    snare: new Array(16).fill(false),
+                    hihat: new Array(16).fill(false)
+                };
+
+                document.querySelectorAll('.step').forEach(step => {
+                    step.classList.remove('active');
+                });
+            }
+
+            hideLoading() {
+                document.getElementById('loading').classList.add('hidden');
+            }
+        }
+
+        // Initialize app
+        const drumMachine = new DrumMachine();
+    </script>
+</body>
+</html>
