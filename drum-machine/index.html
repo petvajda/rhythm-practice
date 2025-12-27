@@ -512,32 +512,20 @@
 
             async initAudio() {
                 try {
-                    // Load actual MIDI drum samples from FluidR3_GM soundfont
-                    // Using the standard GM percussion on MIDI channel 10
+                    // Load only the 3 drum samples we need from FluidR3_GM soundfont
+                    // Using acoustic_grand_piano as the base (actual drum kit soundfonts use different URLs)
                     const soundfontBase = 'https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/';
                     
-                    // Create sampler with actual drum samples
-                    // Note: In GM, drums use specific MIDI note numbers on channel 10
-                    // We'll load the entire drum kit
+                    // Create sampler with just the notes we need
                     this.drumSampler = new Tone.Sampler({
                         urls: {
-                            // Load actual drum samples at their MIDI pitch
-                            "C1": "C1.mp3",   // MIDI note 36 - Bass Drum 1
-                            "C#1": "Cs1.mp3", // MIDI note 37 - Side Stick
-                            "D1": "D1.mp3",   // MIDI note 38 - Acoustic Snare
-                            "D#1": "Ds1.mp3", // MIDI note 39 - Hand Clap
-                            "E1": "E1.mp3",   // MIDI note 40 - Electric Snare
-                            "F1": "F1.mp3",   // MIDI note 41 - Low Floor Tom
-                            "F#1": "Fs1.mp3", // MIDI note 42 - Closed Hi-Hat
-                            "G1": "G1.mp3",   // MIDI note 43 - High Floor Tom
-                            "G#1": "Gs1.mp3", // MIDI note 44 - Pedal Hi-Hat
-                            "A1": "A1.mp3",   // MIDI note 45 - Low Tom
-                            "A#1": "As1.mp3", // MIDI note 46 - Open Hi-Hat
-                            "B1": "B1.mp3"    // MIDI note 47 - Low-Mid Tom
+                            "C1": "C1.mp3",   // MIDI note 36 - Bass Drum (Kick)
+                            "D1": "D1.mp3",   // MIDI note 38 - Snare
+                            "F1": "F1.mp3"    // MIDI note 41 - We'll use this for hi-hat
                         },
                         baseUrl: soundfontBase + "acoustic_grand_piano-mp3/",
                         onload: () => {
-                            console.log("MIDI drum samples loaded");
+                            console.log("MIDI samples loaded successfully");
                             this.audioReady = true;
                             this.hideLoading();
                         }
@@ -658,10 +646,15 @@
             }
 
             async togglePlay() {
-                if (!this.audioReady) return;
+                if (!this.audioReady) {
+                    console.warn("Audio not ready yet");
+                    return;
+                }
 
                 if (!this.isPlaying) {
+                    // Resume AudioContext on user interaction (required by browsers)
                     await Tone.start();
+                    console.log("AudioContext started");
                     this.startPlayback();
                 } else {
                     this.stopPlayback();
@@ -707,12 +700,12 @@
             }
 
             playMidiNote(midiNote, time, duration) {
-                // MIDI drum note mapping (General MIDI standard)
-                // Channel 10 percussion notes
+                // MIDI drum note mapping using available piano samples
+                // Note: We're using piano samples as placeholders
                 const noteMap = {
-                    36: 'C1',   // Bass Drum 1 (Kick)
-                    38: 'D1',   // Acoustic Snare
-                    42: 'F#1'   // Closed Hi-Hat
+                    36: 'C1',   // Bass Drum (Kick) - low C
+                    38: 'D1',   // Snare - D 
+                    42: 'F1'    // Hi-Hat - F (high pitched)
                 };
                 
                 const note = noteMap[midiNote];
