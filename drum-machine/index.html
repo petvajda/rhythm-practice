@@ -512,27 +512,28 @@
 
             async initAudio() {
                 try {
-                    // Load Google Magenta drum samples
-                    // These are high-quality, web-optimized drum sounds
-                    const magentaBase = 'https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus/';
+                    // Load actual MIDI General MIDI drum samples from GitHub CDN
+                    // Source: https://github.com/shiningjason/drum-sounds
+                    const drumBase = 'https://raw.githubusercontent.com/shiningjason/drum-sounds/master/';
                     
-                    // Create sampler with actual drum samples
+                    // Create sampler with real MIDI drum samples
                     this.drumSampler = new Tone.Sampler({
                         urls: {
-                            "C2": "kick.mp3",      // Kick drum
-                            "D2": "snare.mp3",     // Snare drum
-                            "F#2": "hihat.mp3"     // Hi-hat
+                            "C2": "bass-drum-1.mp3",      // Kick drum - MIDI note 36
+                            "D2": "acoustic-snare.mp3",   // Snare drum - MIDI note 38
+                            "F#2": "closed-hihat.mp3"     // Closed Hi-Hat - MIDI note 42
                         },
-                        baseUrl: magentaBase,
+                        baseUrl: drumBase,
                         onload: () => {
-                            console.log("Magenta drum samples loaded successfully");
+                            console.log("MIDI drum samples loaded successfully from GitHub CDN");
                             this.audioReady = true;
                             this.hideLoading();
                         },
                         onerror: (error) => {
-                            console.error("Error loading Magenta samples:", error);
-                            // Fallback to synthesis
-                            this.createSyntheticDrums();
+                            console.error("Error loading drum samples:", error);
+                            // Fallback to synthesis if samples fail to load
+                            console.log("Falling back to synthesized drums");
+                            this.createFallbackDrums();
                             this.audioReady = true;
                             this.hideLoading();
                         }
@@ -540,83 +541,49 @@
                     
                 } catch (error) {
                     console.error('MIDI initialization error:', error);
-                    // Fallback to synthesis
-                    this.createSyntheticDrums();
+                    this.createFallbackDrums();
                     this.audioReady = true;
                     this.hideLoading();
                 }
             }
 
-            createSyntheticDrums() {
-                // Dispose of existing synths if they exist
-                if (this.kickOsc) {
-                    this.kickOsc.dispose();
-                    this.kickEnv.dispose();
-                }
-                if (this.snareNoise) {
-                    this.snareNoise.dispose();
-                    this.snareEnv.dispose();
-                    this.snareFilter.dispose();
-                }
-                if (this.hihatNoise) {
-                    this.hihatNoise.dispose();
-                    this.hihatEnv.dispose();
-                    this.hihatFilter.dispose();
-                }
-
-                // Create kick drum synth
-                this.kickEnv = new Tone.AmplitudeEnvelope({
-                    attack: 0.001,
-                    decay: 0.2,
-                    sustain: 0,
-                    release: 0.2
+            createFallbackDrums() {
+                // Fallback to better synthesis if MIDI samples fail
+                this.kickSynth = new Tone.MembraneSynth({
+                    pitchDecay: 0.05,
+                    octaves: 10,
+                    oscillator: { type: 'sine' },
+                    envelope: {
+                        attack: 0.001,
+                        decay: 0.4,
+                        sustain: 0.01,
+                        release: 1.4
+                    }
                 }).toDestination();
                 
-                this.kickOsc = new Tone.Oscillator({
-                    frequency: 150
-                }).connect(this.kickEnv);
-                this.kickOsc.start();
-
-                this.kickSynth = (time) => {
-                    this.kickOsc.frequency.setValueAtTime(150, time);
-                    this.kickOsc.frequency.exponentialRampToValueAtTime(40, time + 0.1);
-                    this.kickEnv.triggerAttackRelease(0.2, time);
-                };
-
-                // Create snare drum synth
-                this.snareEnv = new Tone.AmplitudeEnvelope({
-                    attack: 0.001,
-                    decay: 0.15,
-                    sustain: 0,
-                    release: 0.15
+                this.snareSynth = new Tone.NoiseSynth({
+                    noise: { type: 'white' },
+                    envelope: {
+                        attack: 0.001,
+                        decay: 0.2,
+                        sustain: 0
+                    }
                 }).toDestination();
-
-                this.snareFilter = new Tone.Filter(3000, 'highpass').toDestination();
-                this.snareNoise = new Tone.Noise('white').connect(this.snareEnv);
-                this.snareEnv.connect(this.snareFilter);
-                this.snareNoise.start();
-
-                this.snareSynth = (time) => {
-                    this.snareEnv.triggerAttackRelease(0.15, time);
-                };
-
-                // Create hi-hat synth
-                this.hihatEnv = new Tone.AmplitudeEnvelope({
-                    attack: 0.001,
-                    decay: 0.05,
-                    sustain: 0,
-                    release: 0.05
+                
+                this.hihatSynth = new Tone.MetalSynth({
+                    frequency: 200,
+                    envelope: {
+                        attack: 0.001,
+                        decay: 0.1,
+                        release: 0.01
+                    },
+                    harmonicity: 5.1,
+                    modulationIndex: 32,
+                    resonance: 4000,
+                    octaves: 1.5
                 }).toDestination();
-
-                this.hihatFilter = new Tone.Filter(8000, 'highpass').toDestination();
-                this.hihatNoise = new Tone.Noise('white').connect(this.hihatEnv);
-                this.hihatEnv.connect(this.hihatFilter);
-                this.hihatNoise.start();
-
-                this.hihatSynth = (time) => {
-                    this.hihatEnv.triggerAttackRelease(0.05, time);
-                };
             }
+
 
             setupEventListeners() {
                 // Step buttons
@@ -681,23 +648,29 @@
                 this.sequence = Tone.Transport.scheduleRepeat((time) => {
                     const step = stepCounter % 16;
                     
-                    // Schedule visual updates
+                    // Schedule visual updates using the provided time
                     Tone.Draw.schedule(() => {
                         this.updateVisualStep(step);
                     }, time);
 
-                    // Play MIDI sounds with proper note numbers
+                    // Play MIDI sounds with the exact scheduled time
                     if (this.pattern.kick[step]) {
-                        this.playMidiNote(36, time, '16n'); // MIDI note 36 = Kick
-                        this.flashStep('kick', step, time);
+                        this.playMidiNote(36, time, '16n');
+                        Tone.Draw.schedule(() => {
+                            this.flashStep('kick', step);
+                        }, time);
                     }
                     if (this.pattern.snare[step]) {
-                        this.playMidiNote(38, time, '16n'); // MIDI note 38 = Snare
-                        this.flashStep('snare', step, time);
+                        this.playMidiNote(38, time, '16n');
+                        Tone.Draw.schedule(() => {
+                            this.flashStep('snare', step);
+                        }, time);
                     }
                     if (this.pattern.hihat[step]) {
-                        this.playMidiNote(42, time, '32n'); // MIDI note 42 = Closed Hi-Hat
-                        this.flashStep('hihat', step, time);
+                        this.playMidiNote(42, time, '32n');
+                        Tone.Draw.schedule(() => {
+                            this.flashStep('hihat', step);
+                        }, time);
                     }
                     
                     stepCounter++;
@@ -707,22 +680,30 @@
             }
 
             playMidiNote(midiNote, time, duration) {
-                // MIDI drum note mapping to Magenta samples
-                // Using standard pitches for drum sample playback
-                const noteMap = {
-                    36: 'C2',   // Kick drum - MIDI note 36
-                    38: 'D2',   // Snare drum - MIDI note 38
-                    42: 'F#2'   // Hi-hat - MIDI note 42
-                };
+                // MIDI drum note mapping (General MIDI standard)
+                // Channel 10 percussion: 36=Kick, 38=Snare, 42=Hi-Hat
                 
-                const note = noteMap[midiNote];
-                if (this.drumSampler && note) {
-                    this.drumSampler.triggerAttackRelease(note, duration, time);
-                } else if (this.kickSynth) {
-                    // Fallback to synthesis if MIDI not loaded
-                    if (midiNote === 36) this.kickSynth(time);
-                    if (midiNote === 38) this.snareSynth(time);
-                    if (midiNote === 42) this.hihatSynth(time);
+                if (this.drumSampler) {
+                    // Use real MIDI samples
+                    const noteMap = {
+                        36: 'C2',   // Kick drum
+                        38: 'D2',   // Snare drum
+                        42: 'F#2'   // Closed Hi-Hat
+                    };
+                    
+                    const note = noteMap[midiNote];
+                    if (note) {
+                        this.drumSampler.triggerAttackRelease(note, duration, time);
+                    }
+                } else {
+                    // Fallback to synthesis
+                    if (midiNote === 36 && this.kickSynth) {
+                        this.kickSynth.triggerAttackRelease('C1', '8n', time);
+                    } else if (midiNote === 38 && this.snareSynth) {
+                        this.snareSynth.triggerAttackRelease('8n', time);
+                    } else if (midiNote === 42 && this.hihatSynth) {
+                        this.hihatSynth.triggerAttackRelease('32n', time);
+                    }
                 }
             }
 
@@ -759,7 +740,7 @@
                 });
             }
 
-            flashStep(sound, step, time) {
+            flashStep(sound, step) {
                 const row = document.querySelector(`.drum-row[data-sound="${sound}"]`);
                 const stepElement = row.querySelector(`.step[data-step="${step}"]`);
                 
