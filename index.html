@@ -1976,16 +1976,16 @@ K:C clef=bass
                 
                 console.log('✅ ABCJS library confirmed ready');
                 
-                // Create audio context
+                // Create audio context (but don't try to resume yet)
                 if (!audioContext) {
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     console.log('🔊 Audio context created:', audioContext.state);
                 }
                 
-                // Resume audio context if needed (important for mobile)
+                // Note: Don't resume here - browser requires user gesture
+                // We'll resume when user clicks the play button
                 if (audioContext.state === 'suspended') {
-                    console.log('▶️ Resuming suspended audio context...');
-                    await audioContext.resume();
+                    console.log('ℹ️ Audio context suspended (will resume on play button click)');
                 }
                 
                 showStatus('Initializing MIDI synthesizer...', 'info');
