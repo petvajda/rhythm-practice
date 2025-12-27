@@ -477,6 +477,7 @@
                 this.bpm = 100;
                 this.currentStep = 0;
                 this.isPlaying = false;
+                this.sequence = null;
                 // Default pattern from screenshot
                 this.pattern = {
                     kick: [true, false, false, false,  false, false, true, false,  true, false, false, false,  false, false, true, false],
@@ -485,7 +486,6 @@
                 };
                 
                 this.players = null;
-                this.sequence = null;
                 this.audioReady = false;
                 
                 this.init();
@@ -495,7 +495,6 @@
                 await this.initAudio();
                 this.setupEventListeners();
                 this.loadInitialPattern();
-                this.hideLoading();
             }
 
             loadInitialPattern() {
@@ -513,77 +512,114 @@
 
             async initAudio() {
                 try {
-                    // Initialize Tone.js players with drum samples
-                    this.players = new Tone.Players({
-                        kick: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=',
-                        snare: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=',
-                        hihat: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='
-                    }).toDestination();
-
-                    // Create synthetic drum sounds using Tone.js
-                    this.createSyntheticDrums();
+                    // Load actual MIDI drum samples from FluidR3_GM soundfont
+                    // Using the standard GM percussion on MIDI channel 10
+                    const soundfontBase = 'https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/';
                     
-                    this.audioReady = true;
+                    // Create sampler with actual drum samples
+                    // Note: In GM, drums use specific MIDI note numbers on channel 10
+                    // We'll load the entire drum kit
+                    this.drumSampler = new Tone.Sampler({
+                        urls: {
+                            // Load actual drum samples at their MIDI pitch
+                            "C1": "C1.mp3",   // MIDI note 36 - Bass Drum 1
+                            "C#1": "Cs1.mp3", // MIDI note 37 - Side Stick
+                            "D1": "D1.mp3",   // MIDI note 38 - Acoustic Snare
+                            "D#1": "Ds1.mp3", // MIDI note 39 - Hand Clap
+                            "E1": "E1.mp3",   // MIDI note 40 - Electric Snare
+                            "F1": "F1.mp3",   // MIDI note 41 - Low Floor Tom
+                            "F#1": "Fs1.mp3", // MIDI note 42 - Closed Hi-Hat
+                            "G1": "G1.mp3",   // MIDI note 43 - High Floor Tom
+                            "G#1": "Gs1.mp3", // MIDI note 44 - Pedal Hi-Hat
+                            "A1": "A1.mp3",   // MIDI note 45 - Low Tom
+                            "A#1": "As1.mp3", // MIDI note 46 - Open Hi-Hat
+                            "B1": "B1.mp3"    // MIDI note 47 - Low-Mid Tom
+                        },
+                        baseUrl: soundfontBase + "acoustic_grand_piano-mp3/",
+                        onload: () => {
+                            console.log("MIDI drum samples loaded");
+                            this.audioReady = true;
+                            this.hideLoading();
+                        }
+                    }).toDestination();
+                    
                 } catch (error) {
-                    console.error('Audio initialization error:', error);
+                    console.error('MIDI initialization error:', error);
+                    // Fallback to synthesis
+                    this.createSyntheticDrums();
+                    this.audioReady = true;
+                    this.hideLoading();
                 }
             }
 
             createSyntheticDrums() {
+                // Dispose of existing synths if they exist
+                if (this.kickOsc) {
+                    this.kickOsc.dispose();
+                    this.kickEnv.dispose();
+                }
+                if (this.snareNoise) {
+                    this.snareNoise.dispose();
+                    this.snareEnv.dispose();
+                    this.snareFilter.dispose();
+                }
+                if (this.hihatNoise) {
+                    this.hihatNoise.dispose();
+                    this.hihatEnv.dispose();
+                    this.hihatFilter.dispose();
+                }
+
                 // Create kick drum synth
-                const kickEnv = new Tone.AmplitudeEnvelope({
+                this.kickEnv = new Tone.AmplitudeEnvelope({
                     attack: 0.001,
                     decay: 0.2,
                     sustain: 0,
                     release: 0.2
                 }).toDestination();
                 
-                const kickOsc = new Tone.Oscillator({
+                this.kickOsc = new Tone.Oscillator({
                     frequency: 150
-                }).connect(kickEnv);
+                }).connect(this.kickEnv);
+                this.kickOsc.start();
 
                 this.kickSynth = (time) => {
-                    kickOsc.frequency.setValueAtTime(150, time);
-                    kickOsc.frequency.exponentialRampToValueAtTime(40, time + 0.1);
-                    kickOsc.start(time);
-                    kickEnv.triggerAttackRelease(0.2, time);
-                    kickOsc.stop(time + 0.3);
+                    this.kickOsc.frequency.setValueAtTime(150, time);
+                    this.kickOsc.frequency.exponentialRampToValueAtTime(40, time + 0.1);
+                    this.kickEnv.triggerAttackRelease(0.2, time);
                 };
 
                 // Create snare drum synth
-                const snareEnv = new Tone.AmplitudeEnvelope({
+                this.snareEnv = new Tone.AmplitudeEnvelope({
                     attack: 0.001,
                     decay: 0.15,
                     sustain: 0,
                     release: 0.15
                 }).toDestination();
 
-                const snareNoise = new Tone.Noise('white').connect(snareEnv);
-                const snareFilter = new Tone.Filter(3000, 'highpass').toDestination();
-                snareEnv.connect(snareFilter);
+                this.snareFilter = new Tone.Filter(3000, 'highpass').toDestination();
+                this.snareNoise = new Tone.Noise('white').connect(this.snareEnv);
+                this.snareEnv.connect(this.snareFilter);
+                this.snareNoise.start();
 
                 this.snareSynth = (time) => {
-                    snareNoise.start(time);
-                    snareEnv.triggerAttackRelease(0.15, time);
-                    snareNoise.stop(time + 0.2);
+                    this.snareEnv.triggerAttackRelease(0.15, time);
                 };
 
                 // Create hi-hat synth
-                const hihatEnv = new Tone.AmplitudeEnvelope({
+                this.hihatEnv = new Tone.AmplitudeEnvelope({
                     attack: 0.001,
                     decay: 0.05,
                     sustain: 0,
                     release: 0.05
                 }).toDestination();
 
-                const hihatNoise = new Tone.Noise('white').connect(hihatEnv);
-                const hihatFilter = new Tone.Filter(8000, 'highpass').toDestination();
-                hihatEnv.connect(hihatFilter);
+                this.hihatFilter = new Tone.Filter(8000, 'highpass').toDestination();
+                this.hihatNoise = new Tone.Noise('white').connect(this.hihatEnv);
+                this.hihatEnv.connect(this.hihatFilter);
+                this.hihatNoise.start();
 
                 this.hihatSynth = (time) => {
-                    hihatNoise.start(time);
-                    hihatEnv.triggerAttackRelease(0.05, time);
-                    hihatNoise.stop(time + 0.1);
+                    this.hihatEnv.triggerAttackRelease(0.05, time);
                 };
             }
 
@@ -640,27 +676,27 @@
                 Tone.Transport.bpm.value = this.bpm;
                 this.currentStep = 0;
                 
-                // Use scheduleRepeat for more stable timing
+                // Use scheduleRepeat for stable timing
                 let stepCounter = 0;
                 this.sequence = Tone.Transport.scheduleRepeat((time) => {
                     const step = stepCounter % 16;
                     
-                    // Schedule visual updates slightly ahead for smoothness
+                    // Schedule visual updates
                     Tone.Draw.schedule(() => {
                         this.updateVisualStep(step);
                     }, time);
 
-                    // Play sounds with precise timing
+                    // Play MIDI sounds with proper note numbers
                     if (this.pattern.kick[step]) {
-                        this.kickSynth(time);
+                        this.playMidiNote(36, time, '16n'); // MIDI note 36 = Kick
                         this.flashStep('kick', step, time);
                     }
                     if (this.pattern.snare[step]) {
-                        this.snareSynth(time);
+                        this.playMidiNote(38, time, '16n'); // MIDI note 38 = Snare
                         this.flashStep('snare', step, time);
                     }
                     if (this.pattern.hihat[step]) {
-                        this.hihatSynth(time);
+                        this.playMidiNote(42, time, '32n'); // MIDI note 42 = Closed Hi-Hat
                         this.flashStep('hihat', step, time);
                     }
                     
@@ -670,19 +706,45 @@
                 Tone.Transport.start();
             }
 
+            playMidiNote(midiNote, time, duration) {
+                // MIDI drum note mapping (General MIDI standard)
+                // Channel 10 percussion notes
+                const noteMap = {
+                    36: 'C1',   // Bass Drum 1 (Kick)
+                    38: 'D1',   // Acoustic Snare
+                    42: 'F#1'   // Closed Hi-Hat
+                };
+                
+                const note = noteMap[midiNote];
+                if (this.drumSampler && note) {
+                    this.drumSampler.triggerAttackRelease(note, duration, time);
+                } else if (this.kickSynth) {
+                    // Fallback to synthesis if MIDI not loaded
+                    if (midiNote === 36) this.kickSynth(time);
+                    if (midiNote === 38) this.snareSynth(time);
+                    if (midiNote === 42) this.hihatSynth(time);
+                }
+            }
+
             stopPlayback() {
                 this.isPlaying = false;
                 document.getElementById('playBtn').classList.remove('playing');
                 document.getElementById('playBtn').textContent = 'Play';
 
-                if (this.sequence) {
+                // Clear the scheduled repeat event
+                if (this.sequence !== null) {
                     Tone.Transport.clear(this.sequence);
                     this.sequence = null;
                 }
                 
+                // Stop transport and reset position
                 Tone.Transport.stop();
+                Tone.Transport.cancel(0); // Cancel all scheduled events
                 Tone.Transport.position = 0;
+                
+                // Clear visual state
                 this.clearVisualSteps();
+                this.currentStep = 0;
             }
 
             updateVisualStep(step) {
