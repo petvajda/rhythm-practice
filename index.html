@@ -1618,10 +1618,14 @@ K:C clef=bass
                 allNotes.forEach(note => note.classList.remove('abcjs-cursor'));
             }, 0);
             
-            // Enable play button now that we have a rhythm
+            // Enable play button now that we have a rhythm (if audio is ready)
+            // If audio isn't ready yet, it will be enabled when audio finishes loading
             const playButton = document.getElementById('playButton');
             if (playButton && audioReady) {
                 playButton.disabled = false;
+                console.log('✅ Play button enabled (rhythm ready + audio ready)');
+            } else if (playButton) {
+                console.log('ℹ️ Play button still disabled (waiting for audio to be ready)');
             }
             
             showStatus('Rhythm generated successfully!', 'success');
@@ -1725,9 +1729,11 @@ K:C clef=bass
                             }
                         },
                         // Metronome configuration with side stick sound
-                        drum: countInEnabled ? "d 37 37 37 37" : undefined, // MIDI 37 = Side Stick
-                        drumBars: countInEnabled ? barCount : 0,
-                        drumIntro: 0 // We handle count-in separately
+                        // Format: "d" for drum pattern, followed by MIDI note numbers for each beat
+                        // We want metronome on all beats, not just count-in
+                        drum: "d 37 37 37 37", // MIDI 37 = Side Stick for all 4 beats
+                        drumBars: barCount, // Play metronome for all bars
+                        drumIntro: countInEnabled ? 1 : 0 // Count-in bar if enabled
                     },
                     millisecondsPerMeasure: (60000 / tempo) * 4 // 4/4 time
                 });
@@ -1739,45 +1745,25 @@ K:C clef=bass
                 
                 console.log('✅ Audio buffer ready');
                 
-                // If count-in is enabled, play it first with side stick sounds
+                // Show status based on count-in setting
                 if (countInEnabled) {
-                    const beatDuration = 60 / tempo;
-                    console.log('🥁 Playing count-in with side stick sounds...');
-                    showStatus('4', 'playing');
-                    
-                    // Display count-in countdown
-                    await new Promise((resolve) => {
-                        setTimeout(() => { if (isPlaying) updateStatusText('3'); }, beatDuration * 1000);
-                        setTimeout(() => { if (isPlaying) updateStatusText('2'); }, beatDuration * 2000);
-                        setTimeout(() => { if (isPlaying) updateStatusText('1'); }, beatDuration * 3000);
-                        setTimeout(() => {
-                            if (isPlaying) {
-                                updateStatusText('Playing...');
-                                resolve();
-                            }
-                        }, beatDuration * 4000);
-                    });
-                    
-                    // Check if user stopped during count-in
-                    if (!isPlaying) {
-                        isInitiatingPlayback = false;
-                        return;
-                    }
+                    showStatus('Count-in: 4-3-2-1...', 'playing');
                 } else {
                     showStatus('Playing...', 'playing');
                 }
                 
-                console.log('🎵 Starting MIDI playback with bass guitar...');
+                console.log('🎵 Starting MIDI playback with bass guitar and metronome...');
                 
-                // Start MIDI playback
+                // Start MIDI playback (includes count-in if enabled via drumIntro)
                 await midiBuffer.start();
                 
-                // Calculate total duration for auto-stop
+                // Calculate total duration for auto-stop (including count-in if enabled)
                 const beatDuration = 60 / tempo;
-                const totalBeats = barCount * 4; // 4 beats per bar
+                const countInBeats = countInEnabled ? 4 : 0;
+                const totalBeats = (barCount * 4) + countInBeats; // 4 beats per bar + count-in
                 const totalDuration = totalBeats * beatDuration * 1000;
                 
-                console.log(`⏱️ Total duration: ${totalDuration}ms`);
+                console.log(`⏱️ Total duration: ${totalDuration}ms (${countInBeats} count-in beats + ${barCount * 4} rhythm beats)`);
                 
                 // Auto-stop after playback finishes
                 setTimeout(() => {
@@ -1950,12 +1936,14 @@ K:C clef=bass
                 return;
             }
             
+            // Declare playButton at function scope so it's accessible in try and catch
+            const playButton = document.getElementById('playButton');
+            
             try {
                 isLoadingSounds = true;
                 console.log('🎵 Starting MIDI synthesizer initialization...');
                 
                 // Disable play button and show loading status
-                const playButton = document.getElementById('playButton');
                 if (playButton) {
                     playButton.disabled = true;
                 }
@@ -1996,6 +1984,12 @@ K:C clef=bass
                 // Mark as ready
                 audioReady = true;
                 
+                // Enable play button if a rhythm has already been generated
+                if (currentABC && playButton) {
+                    playButton.disabled = false;
+                    console.log('✅ Play button enabled (audio ready + rhythm exists)');
+                }
+                
                 console.log('✅ Audio system ready!');
                 showStatus('Generate a rhythm to start!', 'success');
                 
@@ -2004,8 +1998,7 @@ K:C clef=bass
                 showStatus(error.message || 'Audio loading failed - please reload page', 'error');
                 audioReady = false;
                 
-                // Keep play button disabled
-                const playButton = document.getElementById('playButton');
+                // Keep play button disabled (reuse playButton from try block scope)
                 if (playButton) {
                     playButton.disabled = true;
                 }
