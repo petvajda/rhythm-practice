@@ -164,6 +164,139 @@
             letter-spacing: 1px;
             color: var(--neon-yellow);
             text-shadow: 0 0 8px var(--neon-yellow);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: flex-start;
+        }
+
+        .row-label-text {
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .row-label-text.clickable:hover {
+            color: var(--neon-pink);
+            text-shadow: 0 0 12px var(--neon-pink);
+        }
+
+        /* Snare selection dialog */
+        .snare-dialog-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .snare-dialog-overlay.show {
+            display: flex;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .snare-dialog {
+            background: linear-gradient(135deg, rgba(10, 10, 10, 0.95), rgba(20, 20, 20, 0.95));
+            border: 3px solid var(--neon-pink);
+            border-radius: 12px;
+            padding: clamp(20px, 4vw, 32px);
+            box-shadow: 0 0 40px rgba(255, 0, 110, 0.6);
+            min-width: clamp(250px, 60vw, 350px);
+            animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideIn {
+            from { 
+                transform: translateY(-30px) scale(0.95);
+                opacity: 0;
+            }
+            to { 
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .snare-dialog-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(18px, 4vw, 24px);
+            font-weight: 900;
+            color: var(--neon-cyan);
+            text-align: center;
+            margin-bottom: clamp(16px, 3vh, 24px);
+            text-shadow: 0 0 15px var(--neon-cyan);
+        }
+
+        .snare-options {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(12px, 2vh, 16px);
+            margin-bottom: clamp(16px, 3vh, 24px);
+        }
+
+        .snare-option {
+            padding: clamp(12px, 2.5vh, 16px);
+            background: var(--bg-darker);
+            border: 2px solid rgba(0, 255, 245, 0.3);
+            border-radius: 8px;
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(14px, 3vw, 18px);
+            font-weight: 700;
+            color: var(--neon-cyan);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            position: relative;
+        }
+
+        .snare-option:hover {
+            border-color: var(--neon-pink);
+            background: rgba(255, 0, 110, 0.1);
+            box-shadow: 0 0 20px rgba(255, 0, 110, 0.4);
+        }
+
+        .snare-option.selected {
+            border-color: var(--neon-yellow);
+            background: linear-gradient(135deg, rgba(0, 255, 245, 0.2), rgba(255, 0, 110, 0.2));
+            box-shadow: 0 0 25px rgba(255, 190, 11, 0.5);
+        }
+
+        .snare-option.selected::before {
+            content: '✓';
+            position: absolute;
+            right: 12px;
+            color: var(--neon-yellow);
+            font-size: 20px;
+        }
+
+        .snare-dialog-close {
+            width: 100%;
+            padding: clamp(10px, 2vh, 14px);
+            background: var(--bg-darker);
+            border: 2px solid var(--neon-cyan);
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(12px, 2.5vw, 16px);
+            font-weight: 700;
+            color: var(--neon-cyan);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .snare-dialog-close:hover {
+            background: rgba(0, 255, 245, 0.2);
+            box-shadow: 0 0 20px rgba(0, 255, 245, 0.4);
+        }
+
+        .snare-dialog-close:active {
+            transform: scale(0.95);
         }
 
         .steps {
@@ -230,6 +363,21 @@
             border-color: var(--neon-yellow);
             box-shadow: 
                 0 0 20px rgba(0, 255, 245, 0.6),
+                inset 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Hi-hat closed state (default active) */
+        .drum-row[data-sound="hihat"] .step.active {
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
+            border-color: var(--neon-yellow);
+        }
+
+        /* Hi-hat open state */
+        .drum-row[data-sound="hihat"] .step.active.open {
+            background: linear-gradient(135deg, var(--neon-yellow), #ff6b00);
+            border-color: #ff6b00;
+            box-shadow: 
+                0 0 20px rgba(255, 107, 0, 0.6),
                 inset 0 0 15px rgba(255, 255, 255, 0.3);
         }
 
@@ -384,7 +532,9 @@
 
         <div class="drum-grid">
             <div class="drum-row" data-sound="kick">
-                <div class="row-label">Kick</div>
+                <div class="row-label">
+                    <div class="row-label-text">Kick</div>
+                </div>
                 <div class="steps">
                     <div class="step-group">
                         <div class="step" data-step="0"></div>
@@ -414,7 +564,9 @@
             </div>
 
             <div class="drum-row" data-sound="snare">
-                <div class="row-label">Snare</div>
+                <div class="row-label">
+                    <div class="row-label-text clickable" id="snareLabel">Snare</div>
+                </div>
                 <div class="steps">
                     <div class="step-group">
                         <div class="step" data-step="0"></div>
@@ -444,7 +596,9 @@
             </div>
 
             <div class="drum-row" data-sound="hihat">
-                <div class="row-label">Hi-Hat</div>
+                <div class="row-label">
+                    <div class="row-label-text">Hi-Hat</div>
+                </div>
                 <div class="steps">
                     <div class="step-group">
                         <div class="step" data-step="0"></div>
@@ -480,6 +634,22 @@
         </div>
     </div>
 
+    <!-- Snare Selection Dialog -->
+    <div class="snare-dialog-overlay" id="snareDialogOverlay">
+        <div class="snare-dialog">
+            <div class="snare-dialog-title">SELECT SNARE TYPE</div>
+            <div class="snare-options">
+                <div class="snare-option selected" data-snare-type="acoustic">
+                    ACOUSTIC
+                </div>
+                <div class="snare-option" data-snare-type="electric">
+                    ELECTRIC
+                </div>
+            </div>
+            <button class="snare-dialog-close" id="snareDialogClose">CLOSE</button>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.min.js"></script>
     <script>
         // Drum Machine App
@@ -489,11 +659,14 @@
                 this.currentStep = 0;
                 this.isPlaying = false;
                 this.sequence = null;
+                this.snareType = 'acoustic'; // acoustic or electric
+                
                 // Default pattern from screenshot
+                // Hi-hat pattern: 0 = off, 1 = closed, 2 = open
                 this.pattern = {
                     kick: [true, false, false, false,  false, false, true, false,  true, false, false, false,  false, false, true, false],
                     snare: [false, false, false, false,  true, false, false, false,  false, false, false, false,  true, false, false, false],
-                    hihat: [true, false, true, false,  true, false, true, false,  true, false, true, false,  true, false, true, false]
+                    hihat: [1, 0, 1, 0,  1, 0, 1, 0,  1, 0, 1, 0,  1, 0, 1, 0]  // 0=off, 1=closed, 2=open
                 };
                 
                 this.players = null;
@@ -512,12 +685,32 @@
                 // Set visual state for initial pattern
                 Object.keys(this.pattern).forEach(sound => {
                     const row = document.querySelector(`.drum-row[data-sound="${sound}"]`);
-                    this.pattern[sound].forEach((active, stepIndex) => {
-                        if (active) {
+                    
+                    if (sound === 'hihat') {
+                        // Handle three-state hi-hat
+                        this.pattern[sound].forEach((state, stepIndex) => {
                             const stepElement = row.querySelector(`.step[data-step="${stepIndex}"]`);
-                            stepElement.classList.add('active');
-                        }
-                    });
+                            if (state === 1) {
+                                // Closed hi-hat
+                                stepElement.classList.add('active');
+                                stepElement.classList.remove('open');
+                            } else if (state === 2) {
+                                // Open hi-hat
+                                stepElement.classList.add('active', 'open');
+                            } else {
+                                // Off
+                                stepElement.classList.remove('active', 'open');
+                            }
+                        });
+                    } else {
+                        // Handle kick and snare (boolean)
+                        this.pattern[sound].forEach((active, stepIndex) => {
+                            if (active) {
+                                const stepElement = row.querySelector(`.step[data-step="${stepIndex}"]`);
+                                stepElement.classList.add('active');
+                            }
+                        });
+                    }
                 });
             }
 
@@ -527,12 +720,14 @@
                     // Source: https://github.com/shiningjason/drum-sounds
                     const drumBase = 'https://raw.githubusercontent.com/shiningjason/drum-sounds/master/';
                     
-                    // Create sampler with real MIDI drum samples
+                    // Create sampler with all drum samples we need
                     this.drumSampler = new Tone.Sampler({
                         urls: {
-                            "C2": "bass-drum-1.mp3",      // Kick drum - MIDI note 36
-                            "D2": "acoustic-snare.mp3",   // Snare drum - MIDI note 38
-                            "F#2": "closed-hihat.mp3"     // Closed Hi-Hat - MIDI note 42
+                            "C2": "bass-drum-1.mp3",         // Kick drum
+                            "D2": "acoustic-snare.mp3",      // Acoustic snare
+                            "E2": "electric-snare.mp3",      // Electric snare
+                            "F#2": "closed-hihat.mp3",       // Closed hi-hat
+                            "G2": "open-hihat.mp3"           // Open hi-hat
                         },
                         baseUrl: drumBase,
                         onload: () => {
@@ -597,7 +792,7 @@
 
 
             setupEventListeners() {
-                // Step buttons
+                // Step buttons - handle kick, snare (toggle), hihat (3-state)
                 document.querySelectorAll('.step').forEach(step => {
                     step.addEventListener('click', (e) => this.toggleStep(e.target));
                 });
@@ -619,6 +814,59 @@
                         }
                     }
                 });
+
+                // Snare label click - open dialog
+                document.getElementById('snareLabel').addEventListener('click', () => {
+                    this.openSnareDialog();
+                });
+
+                // Snare dialog close button
+                document.getElementById('snareDialogClose').addEventListener('click', () => {
+                    this.closeSnareDialog();
+                });
+
+                // Close dialog when clicking overlay
+                document.getElementById('snareDialogOverlay').addEventListener('click', (e) => {
+                    if (e.target.id === 'snareDialogOverlay') {
+                        this.closeSnareDialog();
+                    }
+                });
+
+                // Snare option selection
+                document.querySelectorAll('.snare-option').forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        const snareType = e.target.dataset.snareType;
+                        this.selectSnareType(snareType);
+                    });
+                });
+            }
+
+            openSnareDialog() {
+                document.getElementById('snareDialogOverlay').classList.add('show');
+            }
+
+            closeSnareDialog() {
+                document.getElementById('snareDialogOverlay').classList.remove('show');
+            }
+
+            selectSnareType(type) {
+                this.snareType = type;
+                
+                // Update visual selection
+                document.querySelectorAll('.snare-option').forEach(option => {
+                    if (option.dataset.snareType === type) {
+                        option.classList.add('selected');
+                    } else {
+                        option.classList.remove('selected');
+                    }
+                });
+                
+                console.log('Snare type changed to:', this.snareType);
+                
+                // Auto-close dialog after selection
+                setTimeout(() => {
+                    this.closeSnareDialog();
+                }, 300);
             }
 
             toggleStep(stepElement) {
@@ -626,8 +874,29 @@
                 const sound = row.dataset.sound;
                 const stepIndex = parseInt(stepElement.dataset.step);
                 
-                this.pattern[sound][stepIndex] = !this.pattern[sound][stepIndex];
-                stepElement.classList.toggle('active');
+                if (sound === 'hihat') {
+                    // Three-state cycle: 0 (off) -> 1 (closed) -> 2 (open) -> 0 (off)
+                    const currentState = this.pattern.hihat[stepIndex];
+                    
+                    if (currentState === 0) {
+                        // Off -> Closed
+                        this.pattern.hihat[stepIndex] = 1;
+                        stepElement.classList.add('active');
+                        stepElement.classList.remove('open');
+                    } else if (currentState === 1) {
+                        // Closed -> Open
+                        this.pattern.hihat[stepIndex] = 2;
+                        stepElement.classList.add('active', 'open');
+                    } else {
+                        // Open -> Off
+                        this.pattern.hihat[stepIndex] = 0;
+                        stepElement.classList.remove('active', 'open');
+                    }
+                } else {
+                    // Kick and Snare: simple toggle
+                    this.pattern[sound][stepIndex] = !this.pattern[sound][stepIndex];
+                    stepElement.classList.toggle('active');
+                }
             }
 
             async togglePlay() {
@@ -672,13 +941,25 @@
                         }, time);
                     }
                     if (this.pattern.snare[step]) {
-                        this.playMidiNote(38, time, '16n');
+                        // Use selected snare type (38 = acoustic, 40 = electric)
+                        const snareNote = this.snareType === 'electric' ? 40 : 38;
+                        this.playMidiNote(snareNote, time, '16n');
                         Tone.Draw.schedule(() => {
                             this.flashStep('snare', step);
                         }, time);
                     }
-                    if (this.pattern.hihat[step]) {
+                    
+                    // Hi-hat three states: 0=off, 1=closed, 2=open
+                    const hihatState = this.pattern.hihat[step];
+                    if (hihatState === 1) {
+                        // Closed hi-hat (MIDI note 42)
                         this.playMidiNote(42, time, '32n');
+                        Tone.Draw.schedule(() => {
+                            this.flashStep('hihat', step);
+                        }, time);
+                    } else if (hihatState === 2) {
+                        // Open hi-hat (MIDI note 46)
+                        this.playMidiNote(46, time, '16n');
                         Tone.Draw.schedule(() => {
                             this.flashStep('hihat', step);
                         }, time);
@@ -692,14 +973,16 @@
 
             playMidiNote(midiNote, time, duration) {
                 // MIDI drum note mapping (General MIDI standard)
-                // Channel 10 percussion: 36=Kick, 38=Snare, 42=Hi-Hat
+                // Channel 10 percussion notes with acoustic/electric variants
                 
                 if (this.drumSampler) {
                     // Use real MIDI samples
                     const noteMap = {
                         36: 'C2',   // Kick drum
-                        38: 'D2',   // Snare drum
-                        42: 'F#2'   // Closed Hi-Hat
+                        38: 'D2',   // Acoustic snare
+                        40: 'E2',   // Electric snare
+                        42: 'F#2',  // Closed hi-hat
+                        46: 'G2'    // Open hi-hat
                     };
                     
                     const note = noteMap[midiNote];
@@ -710,9 +993,9 @@
                     // Fallback to synthesis
                     if (midiNote === 36 && this.kickSynth) {
                         this.kickSynth.triggerAttackRelease('C1', '8n', time);
-                    } else if (midiNote === 38 && this.snareSynth) {
+                    } else if ((midiNote === 38 || midiNote === 40) && this.snareSynth) {
                         this.snareSynth.triggerAttackRelease('8n', time);
-                    } else if (midiNote === 42 && this.hihatSynth) {
+                    } else if ((midiNote === 42 || midiNote === 46) && this.hihatSynth) {
                         this.hihatSynth.triggerAttackRelease('32n', time);
                     }
                 }
@@ -771,11 +1054,11 @@
                 this.pattern = {
                     kick: new Array(16).fill(false),
                     snare: new Array(16).fill(false),
-                    hihat: new Array(16).fill(false)
+                    hihat: new Array(16).fill(0)  // 0=off, 1=closed, 2=open
                 };
 
                 document.querySelectorAll('.step').forEach(step => {
-                    step.classList.remove('active');
+                    step.classList.remove('active', 'open');
                 });
             }
 
