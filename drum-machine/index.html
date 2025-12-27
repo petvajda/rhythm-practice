@@ -73,6 +73,9 @@
             gap: clamp(16px, 3vh, 32px);
             position: relative;
             z-index: 1;
+            /* Prevent layout shifts */
+            min-height: 100vh;
+            justify-content: center;
         }
 
         /* Header */
@@ -141,12 +144,16 @@
             border: 2px solid var(--neon-pink);
             border-radius: 12px;
             box-shadow: 0 0 30px rgba(255, 0, 110, 0.2);
+            /* Prevent layout shift during playback */
+            contain: layout style;
         }
 
         .drum-row {
             display: flex;
             gap: clamp(6px, 1.5vw, 12px);
             align-items: center;
+            /* Prevent row reflow */
+            contain: layout;
         }
 
         .row-label {
@@ -200,6 +207,9 @@
             transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
+            /* Prevent layout shift during animations */
+            will-change: transform;
+            transform: translateZ(0);
         }
 
         .step::before {
@@ -212,7 +222,7 @@
         }
 
         .step:active {
-            transform: scale(0.9);
+            transform: scale(0.9) translateZ(0);
         }
 
         .step.active {
@@ -228,15 +238,16 @@
         }
 
         .step.playing {
-            animation: stepPulse 0.1s ease-out;
+            /* Use transform instead of scale to prevent layout shift */
+            transform: scale(1.15) translateZ(0);
             box-shadow: 
                 0 0 30px var(--neon-yellow),
                 inset 0 0 20px rgba(255, 255, 255, 0.5);
         }
 
         @keyframes stepPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.15); }
+            0%, 100% { transform: scale(1) translateZ(0); }
+            50% { transform: scale(1.15) translateZ(0); }
         }
 
         .step.current-beat {
