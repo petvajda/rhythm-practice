@@ -961,7 +961,7 @@
 
                 // BPM decrease button
                 document.getElementById('bpmDown').addEventListener('click', () => {
-                    const newBpm = Math.max(40, this.bpm - 5);
+                    const newBpm = Math.max(40, this.bpm - 1);
                     this.bpm = newBpm;
                     document.getElementById('bpm').value = newBpm;
                     if (this.isPlaying) {
@@ -971,7 +971,7 @@
 
                 // BPM increase button
                 document.getElementById('bpmUp').addEventListener('click', () => {
-                    const newBpm = Math.min(240, this.bpm + 5);
+                    const newBpm = Math.min(240, this.bpm + 1);
                     this.bpm = newBpm;
                     document.getElementById('bpm').value = newBpm;
                     if (this.isPlaying) {
