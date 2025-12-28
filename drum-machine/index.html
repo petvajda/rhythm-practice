@@ -134,6 +134,35 @@
             box-shadow: 0 0 25px rgba(255, 0, 110, 0.6);
         }
 
+        .tempo-btn {
+            width: clamp(32px, 8vw, 40px);
+            height: clamp(32px, 8vw, 40px);
+            padding: 0;
+            background: var(--bg-darker);
+            border: 2px solid var(--neon-cyan);
+            border-radius: 4px;
+            color: var(--neon-cyan);
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(18px, 4vw, 24px);
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 255, 245, 0.3);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tempo-btn:hover {
+            background: rgba(0, 255, 245, 0.1);
+            box-shadow: 0 0 25px rgba(0, 255, 245, 0.6);
+            transform: scale(1.05);
+        }
+
+        .tempo-btn:active {
+            transform: scale(0.95);
+        }
+
         /* Drum Grid */
         .drum-grid {
             display: flex;
@@ -526,7 +555,9 @@
             <div class="logo">GRID BEATS</div>
             <div class="tempo-control">
                 <label class="tempo-label">BPM</label>
+                <button class="tempo-btn" id="bpmDown">−</button>
                 <input type="number" class="tempo-input" id="bpm" value="100" min="40" max="240" step="1">
+                <button class="tempo-btn" id="bpmUp">+</button>
             </div>
         </div>
 
@@ -925,6 +956,26 @@
                         if (this.isPlaying) {
                             Tone.Transport.bpm.rampTo(this.bpm, 0.1);
                         }
+                    }
+                });
+
+                // BPM decrease button
+                document.getElementById('bpmDown').addEventListener('click', () => {
+                    const newBpm = Math.max(40, this.bpm - 5);
+                    this.bpm = newBpm;
+                    document.getElementById('bpm').value = newBpm;
+                    if (this.isPlaying) {
+                        Tone.Transport.bpm.rampTo(this.bpm, 0.1);
+                    }
+                });
+
+                // BPM increase button
+                document.getElementById('bpmUp').addEventListener('click', () => {
+                    const newBpm = Math.min(240, this.bpm + 5);
+                    this.bpm = newBpm;
+                    document.getElementById('bpm').value = newBpm;
+                    if (this.isPlaying) {
+                        Tone.Transport.bpm.rampTo(this.bpm, 0.1);
                     }
                 });
 
