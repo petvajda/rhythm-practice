@@ -533,7 +533,7 @@
         <div class="drum-grid">
             <div class="drum-row" data-sound="kick">
                 <div class="row-label">
-                    <div class="row-label-text">Kick</div>
+                    <div class="row-label-text clickable" id="kickLabel">Kick</div>
                 </div>
                 <div class="steps">
                     <div class="step-group">
@@ -639,14 +639,39 @@
         <div class="snare-dialog">
             <div class="snare-dialog-title">SELECT SNARE TYPE</div>
             <div class="snare-options">
-                <div class="snare-option selected" data-snare-type="acoustic">
-                    ACOUSTIC
+                <div class="snare-option selected" data-snare-type="808sd-0">
+                    808 SNARE 1
                 </div>
-                <div class="snare-option" data-snare-type="electric">
-                    ELECTRIC
+                <div class="snare-option" data-snare-type="808sd-10">
+                    808 SNARE 2
+                </div>
+                <div class="snare-option" data-snare-type="808sd-25">
+                    808 SNARE 3
                 </div>
             </div>
             <button class="snare-dialog-close" id="snareDialogClose">CLOSE</button>
+        </div>
+    </div>
+
+    <!-- Kick Selection Dialog -->
+    <div class="snare-dialog-overlay" id="kickDialogOverlay">
+        <div class="snare-dialog">
+            <div class="snare-dialog-title">SELECT KICK TYPE</div>
+            <div class="snare-options">
+                <div class="snare-option selected" data-kick-type="909">
+                    909 KICK
+                </div>
+                <div class="snare-option" data-kick-type="clubkick">
+                    CLUB KICK
+                </div>
+                <div class="snare-option" data-kick-type="808bd-0">
+                    808 KICK 1
+                </div>
+                <div class="snare-option" data-kick-type="808bd-10">
+                    808 KICK 2
+                </div>
+            </div>
+            <button class="snare-dialog-close" id="kickDialogClose">CLOSE</button>
         </div>
     </div>
 
@@ -659,7 +684,8 @@
                 this.currentStep = 0;
                 this.isPlaying = false;
                 this.sequence = null;
-                this.snareType = 'acoustic'; // acoustic or electric
+                this.kickType = '909'; // 909, clubkick, 808bd-0, 808bd-10
+                this.snareType = '808sd-0'; // 808sd-0, 808sd-10, 808sd-25
                 
                 // Default pattern from screenshot
                 // Hi-hat pattern: 0 = off, 1 = closed, 2 = open
@@ -716,28 +742,36 @@
 
             async initAudio() {
                 try {
-                    // Load actual MIDI General MIDI drum samples from GitHub CDN
-                    // Source: https://github.com/shiningjason/drum-sounds
-                    const drumBase = 'https://raw.githubusercontent.com/shiningjason/drum-sounds/master/';
+                    // Load Tidal Dirt-Samples from GitHub CDN
+                    // Source: https://github.com/tidalcycles/Dirt-Samples
+                    const tidalBase = 'https://raw.githubusercontent.com/tidalcycles/Dirt-Samples/master/';
                     
-                    // Create sampler with all drum samples we need
+                    // Create sampler with all kick, snare, and hi-hat variations
                     this.drumSampler = new Tone.Sampler({
                         urls: {
-                            "C2": "bass-drum-1.mp3",         // Kick drum
-                            "D2": "acoustic-snare.mp3",      // Acoustic snare
-                            "E2": "electric-snare.mp3",      // Electric snare
-                            "F#2": "closed-hihat.mp3",       // Closed hi-hat
-                            "G2": "open-hihat.mp3"           // Open hi-hat
+                            // Kicks
+                            "C1": "909/BD0000.WAV",              // 909 kick
+                            "C#1": "clubkick/KCKLOOP1.wav",      // Club kick
+                            "D1": "808bd/BD0000.WAV",            // 808 kick 1
+                            "D#1": "808bd/BD0010.WAV",           // 808 kick 2
+                            
+                            // Snares
+                            "E1": "808sd/SD0000.WAV",            // 808 snare 1
+                            "F1": "808sd/SD0010.WAV",            // 808 snare 2
+                            "F#1": "808sd/SD0025.WAV",           // 808 snare 3
+                            
+                            // Hi-hats
+                            "G1": "808oh/OH00.WAV",              // Closed hi-hat (using 808 open hat as closed)
+                            "G#1": "808oh/OH25.WAV"              // Open hi-hat
                         },
-                        baseUrl: drumBase,
+                        baseUrl: tidalBase,
                         onload: () => {
-                            console.log("MIDI drum samples loaded successfully from GitHub CDN");
+                            console.log("Tidal Dirt-Samples loaded successfully from GitHub CDN");
                             this.audioReady = true;
                             this.hideLoading();
                         },
                         onerror: (error) => {
-                            console.error("Error loading drum samples:", error);
-                            // Fallback to synthesis if samples fail to load
+                            console.error("Error loading Tidal samples:", error);
                             console.log("Falling back to synthesized drums");
                             this.createFallbackDrums();
                             this.audioReady = true;
@@ -746,7 +780,7 @@
                     }).toDestination();
                     
                 } catch (error) {
-                    console.error('MIDI initialization error:', error);
+                    console.error('Audio initialization error:', error);
                     this.createFallbackDrums();
                     this.audioReady = true;
                     this.hideLoading();
@@ -808,11 +842,35 @@
                     const newBpm = parseInt(e.target.value);
                     if (newBpm >= 40 && newBpm <= 240) {
                         this.bpm = newBpm;
-                        // Apply tempo change immediately if playing
                         if (this.isPlaying) {
                             Tone.Transport.bpm.rampTo(this.bpm, 0.1);
                         }
                     }
+                });
+
+                // Kick label click - open dialog
+                document.getElementById('kickLabel').addEventListener('click', () => {
+                    this.openKickDialog();
+                });
+
+                // Kick dialog close button
+                document.getElementById('kickDialogClose').addEventListener('click', () => {
+                    this.closeKickDialog();
+                });
+
+                // Close kick dialog when clicking overlay
+                document.getElementById('kickDialogOverlay').addEventListener('click', (e) => {
+                    if (e.target.id === 'kickDialogOverlay') {
+                        this.closeKickDialog();
+                    }
+                });
+
+                // Kick option selection
+                document.querySelectorAll('[data-kick-type]').forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        const kickType = e.target.dataset.kickType;
+                        this.selectKickType(kickType);
+                    });
                 });
 
                 // Snare label click - open dialog
@@ -833,7 +891,7 @@
                 });
 
                 // Snare option selection
-                document.querySelectorAll('.snare-option').forEach(option => {
+                document.querySelectorAll('[data-snare-type]').forEach(option => {
                     option.addEventListener('click', (e) => {
                         const snareType = e.target.dataset.snareType;
                         this.selectSnareType(snareType);
@@ -841,31 +899,31 @@
                 });
             }
 
-            openSnareDialog() {
-                document.getElementById('snareDialogOverlay').classList.add('show');
+            openKickDialog() {
+                document.getElementById('kickDialogOverlay').classList.add('show');
             }
 
-            closeSnareDialog() {
-                document.getElementById('snareDialogOverlay').classList.remove('show');
+            closeKickDialog() {
+                document.getElementById('kickDialogOverlay').classList.remove('show');
             }
 
-            selectSnareType(type) {
-                this.snareType = type;
+            selectKickType(type) {
+                this.kickType = type;
                 
                 // Update visual selection
-                document.querySelectorAll('.snare-option').forEach(option => {
-                    if (option.dataset.snareType === type) {
+                document.querySelectorAll('[data-kick-type]').forEach(option => {
+                    if (option.dataset.kickType === type) {
                         option.classList.add('selected');
                     } else {
                         option.classList.remove('selected');
                     }
                 });
                 
-                console.log('Snare type changed to:', this.snareType);
+                console.log('Kick type changed to:', this.kickType);
                 
                 // Auto-close dialog after selection
                 setTimeout(() => {
-                    this.closeSnareDialog();
+                    this.closeKickDialog();
                 }, 300);
             }
 
@@ -933,17 +991,17 @@
                         this.updateVisualStep(step);
                     }, time);
 
-                    // Play MIDI sounds with the exact scheduled time
+                    // Play kick with selected type
                     if (this.pattern.kick[step]) {
-                        this.playMidiNote(36, time, '16n');
+                        this.playKick(time);
                         Tone.Draw.schedule(() => {
                             this.flashStep('kick', step);
                         }, time);
                     }
+                    
+                    // Play snare with selected type
                     if (this.pattern.snare[step]) {
-                        // Use selected snare type (38 = acoustic, 40 = electric)
-                        const snareNote = this.snareType === 'electric' ? 40 : 38;
-                        this.playMidiNote(snareNote, time, '16n');
+                        this.playSnare(time);
                         Tone.Draw.schedule(() => {
                             this.flashStep('snare', step);
                         }, time);
@@ -952,14 +1010,12 @@
                     // Hi-hat three states: 0=off, 1=closed, 2=open
                     const hihatState = this.pattern.hihat[step];
                     if (hihatState === 1) {
-                        // Closed hi-hat (MIDI note 42)
-                        this.playMidiNote(42, time, '32n');
+                        this.playHihat(false, time); // Closed
                         Tone.Draw.schedule(() => {
                             this.flashStep('hihat', step);
                         }, time);
                     } else if (hihatState === 2) {
-                        // Open hi-hat (MIDI note 46)
-                        this.playMidiNote(46, time, '16n');
+                        this.playHihat(true, time); // Open
                         Tone.Draw.schedule(() => {
                             this.flashStep('hihat', step);
                         }, time);
@@ -971,33 +1027,42 @@
                 Tone.Transport.start();
             }
 
-            playMidiNote(midiNote, time, duration) {
-                // MIDI drum note mapping (General MIDI standard)
-                // Channel 10 percussion notes with acoustic/electric variants
+            playKick(time) {
+                // Map kick type to note
+                const kickNotes = {
+                    '909': 'C1',
+                    'clubkick': 'C#1',
+                    '808bd-0': 'D1',
+                    '808bd-10': 'D#1'
+                };
                 
-                if (this.drumSampler) {
-                    // Use real MIDI samples
-                    const noteMap = {
-                        36: 'C2',   // Kick drum
-                        38: 'D2',   // Acoustic snare
-                        40: 'E2',   // Electric snare
-                        42: 'F#2',  // Closed hi-hat
-                        46: 'G2'    // Open hi-hat
-                    };
-                    
-                    const note = noteMap[midiNote];
-                    if (note) {
-                        this.drumSampler.triggerAttackRelease(note, duration, time);
-                    }
-                } else {
-                    // Fallback to synthesis
-                    if (midiNote === 36 && this.kickSynth) {
-                        this.kickSynth.triggerAttackRelease('C1', '8n', time);
-                    } else if ((midiNote === 38 || midiNote === 40) && this.snareSynth) {
-                        this.snareSynth.triggerAttackRelease('8n', time);
-                    } else if ((midiNote === 42 || midiNote === 46) && this.hihatSynth) {
-                        this.hihatSynth.triggerAttackRelease('32n', time);
-                    }
+                const note = kickNotes[this.kickType];
+                if (this.drumSampler && note) {
+                    this.drumSampler.triggerAttackRelease(note, '16n', time);
+                }
+            }
+
+            playSnare(time) {
+                // Map snare type to note
+                const snareNotes = {
+                    '808sd-0': 'E1',
+                    '808sd-10': 'F1',
+                    '808sd-25': 'F#1'
+                };
+                
+                const note = snareNotes[this.snareType];
+                if (this.drumSampler && note) {
+                    this.drumSampler.triggerAttackRelease(note, '16n', time);
+                }
+            }
+
+            playHihat(isOpen, time) {
+                // Closed = G1, Open = G#1
+                const note = isOpen ? 'G#1' : 'G1';
+                const duration = isOpen ? '16n' : '32n';
+                
+                if (this.drumSampler && note) {
+                    this.drumSampler.triggerAttackRelease(note, duration, time);
                 }
             }
 
