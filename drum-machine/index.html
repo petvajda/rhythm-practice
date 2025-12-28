@@ -745,13 +745,13 @@
             <div class="snare-dialog-title">SELECT BASS NOTE</div>
             <div class="snare-options">
                 <div class="snare-option selected" data-bass-note="E1">
-                    E1 (LOW)
+                    E1
                 </div>
                 <div class="snare-option" data-bass-note="F1">
-                    F1 (MID)
+                    F1
                 </div>
                 <div class="snare-option" data-bass-note="G1">
-                    G1 (HIGH)
+                    G1
                 </div>
             </div>
             <button class="snare-dialog-close" id="bassDialogClose">CLOSE</button>
@@ -868,13 +868,13 @@
                     
                     // Load bass guitar samples from tonejs-instruments
                     // Source: https://github.com/nbrosowsky/tonejs-instruments (Karoryfer samples)
-                    // Note: Files are labeled one octave higher than actual pitch
+                    // Try loading E1 and G1 files directly
                     const bassBase = 'https://nbrosowsky.github.io/tonejs-instruments/samples/bass-electric/';
                     
                     this.bassPlayer = new Tone.Sampler({
                         urls: {
-                            "E1": "E2.mp3",   // Labeled E2 but actually E1 (41.2Hz)
-                            "G1": "G2.mp3"    // Labeled G2 but actually G1 (49Hz)
+                            "E1": "E1.mp3",   // Try E1.mp3 file
+                            "G1": "G1.mp3"    // Try G1.mp3 file
                         },
                         baseUrl: bassBase,
                         onload: () => {
@@ -882,7 +882,16 @@
                         },
                         onerror: (error) => {
                             console.error("Error loading bass samples:", error);
-                            // Bass will just be silent if samples fail
+                            console.log("Trying fallback samples...");
+                            // Fallback: try with detune
+                            this.bassPlayer = new Tone.Sampler({
+                                urls: {
+                                    "E1": "E2.mp3",
+                                    "G1": "G2.mp3"
+                                },
+                                baseUrl: bassBase
+                            }).toDestination();
+                            this.bassPlayer.detune.value = -1200;
                         }
                     }).toDestination();
                     
