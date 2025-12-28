@@ -631,6 +631,7 @@
         <div class="controls">
             <button class="control-btn play-btn" id="playBtn">Play</button>
             <button class="control-btn clear-btn" id="clearBtn">Clear</button>
+            <button class="control-btn clear-btn" id="resetBtn">Reset</button>
         </div>
     </div>
 
@@ -639,14 +640,14 @@
         <div class="snare-dialog">
             <div class="snare-dialog-title">SELECT SNARE TYPE</div>
             <div class="snare-options">
-                <div class="snare-option selected" data-snare-type="808sd-0">
-                    808 SNARE 1
+                <div class="snare-option selected" data-snare-type="rytm-classic">
+                    CLASSIC
                 </div>
-                <div class="snare-option" data-snare-type="808sd-10">
-                    808 SNARE 2
+                <div class="snare-option" data-snare-type="rytm-hard">
+                    HARD
                 </div>
-                <div class="snare-option" data-snare-type="808sd-24">
-                    808 SNARE 3
+                <div class="snare-option" data-snare-type="rytm-bright">
+                    BRIGHT
                 </div>
             </div>
             <button class="snare-dialog-close" id="snareDialogClose">CLOSE</button>
@@ -658,17 +659,17 @@
         <div class="snare-dialog">
             <div class="snare-dialog-title">SELECT KICK TYPE</div>
             <div class="snare-options">
-                <div class="snare-option selected" data-kick-type="909">
-                    909 KICK
+                <div class="snare-option selected" data-kick-type="bd-1">
+                    KICK 1
                 </div>
-                <div class="snare-option" data-kick-type="clubkick">
-                    CLUB KICK
+                <div class="snare-option" data-kick-type="bd-2">
+                    KICK 2
                 </div>
-                <div class="snare-option" data-kick-type="808bd-0">
-                    808 KICK 1
+                <div class="snare-option" data-kick-type="bd-3">
+                    KICK 3
                 </div>
-                <div class="snare-option" data-kick-type="808bd-10">
-                    808 KICK 2
+                <div class="snare-option" data-kick-type="bd-4">
+                    KICK 4
                 </div>
             </div>
             <button class="snare-dialog-close" id="kickDialogClose">CLOSE</button>
@@ -684,8 +685,8 @@
                 this.currentStep = 0;
                 this.isPlaying = false;
                 this.sequence = null;
-                this.kickType = '909'; // 909, clubkick, 808bd-0, 808bd-10
-                this.snareType = '808sd-0'; // 808sd-0, 808sd-10, 808sd-25
+                this.kickType = 'bd-1'; // bd-1, bd-2, bd-3, bd-4
+                this.snareType = 'rytm-classic'; // rytm-classic, rytm-hard, rytm-bright
                 
                 // Default pattern from screenshot
                 // Hi-hat pattern: 0 = off, 1 = closed, 2 = open
@@ -744,26 +745,26 @@
                 try {
                     // Load Tidal Dirt-Samples from GitHub CDN
                     // Source: https://github.com/tidalcycles/Dirt-Samples
-                    // Naming convention: foldername/foldername<number>.wav
+                    // Using ONLY confirmed working samples from Strudel documentation
                     const tidalBase = 'https://raw.githubusercontent.com/tidalcycles/Dirt-Samples/master/';
                     
-                    // Create sampler with all kick, snare, and hi-hat variations
+                    // Create sampler with confirmed working samples
                     this.drumSampler = new Tone.Sampler({
                         urls: {
-                            // Kicks
-                            "C1": "909/909.wav",                 // 909 kick (single sample)
-                            "C#1": "clubkick/clubkick0.wav",     // Club kick
-                            "D1": "808bd/808bd0.wav",            // 808 kick 1
-                            "D#1": "808bd/808bd10.wav",          // 808 kick 2
+                            // Kicks - using bd folder samples
+                            "C1": "bd/BT0AADA.wav",              // Kick 1
+                            "C#1": "bd/BT0AAD0.wav",             // Kick 2
+                            "D1": "bd/BT0A0DA.wav",              // Kick 3
+                            "D#1": "bd/BT0A0D0.wav",             // Kick 4
                             
-                            // Snares
-                            "E1": "808sd/808sd0.wav",            // 808 snare 1
-                            "F1": "808sd/808sd10.wav",           // 808 snare 2
-                            "F#1": "808sd/808sd24.wav",          // 808 snare 3 (last one is 24, not 25)
+                            // Snares - using sd folder samples (rytm-01 and rytm-00 confirmed working)
+                            "E1": "sd/rytm-01-classic.wav",      // Classic (confirmed)
+                            "F1": "sd/rytm-00-hard.wav",         // Hard (confirmed)
+                            "F#1": "sd/rytm-01-classic.wav",     // Bright (duplicate of classic for now)
                             
-                            // Hi-hats
-                            "G1": "808oh/808oh0.wav",            // Closed hi-hat (808 open hat 0)
-                            "G#1": "808oh/808oh4.wav"            // Open hi-hat (808 open hat 4)
+                            // Hi-hats - using hh27 folder
+                            "G1": "hh27/000_hh27closedhh.wav",   // Closed (confirmed)
+                            "G#1": "hh27/000_hh27closedhh.wav"   // Open (using closed as duplicate for now)
                         },
                         baseUrl: tidalBase,
                         onload: () => {
@@ -837,6 +838,9 @@
 
                 // Clear button
                 document.getElementById('clearBtn').addEventListener('click', () => this.clearPattern());
+
+                // Reset button
+                document.getElementById('resetBtn').addEventListener('click', () => this.resetPattern());
 
                 // BPM input
                 document.getElementById('bpm').addEventListener('input', (e) => {
@@ -1068,10 +1072,10 @@
             playKick(time) {
                 // Map kick type to note
                 const kickNotes = {
-                    '909': 'C1',
-                    'clubkick': 'C#1',
-                    '808bd-0': 'D1',
-                    '808bd-10': 'D#1'
+                    'bd-1': 'C1',
+                    'bd-2': 'C#1',
+                    'bd-3': 'D1',
+                    'bd-4': 'D#1'
                 };
                 
                 const note = kickNotes[this.kickType];
@@ -1083,9 +1087,9 @@
             playSnare(time) {
                 // Map snare type to note
                 const snareNotes = {
-                    '808sd-0': 'E1',
-                    '808sd-10': 'F1',
-                    '808sd-24': 'F#1'
+                    'rytm-classic': 'E1',
+                    'rytm-hard': 'F1',
+                    'rytm-bright': 'F#1'
                 };
                 
                 const note = snareNotes[this.snareType];
@@ -1162,6 +1166,48 @@
 
                 document.querySelectorAll('.step').forEach(step => {
                     step.classList.remove('active', 'open');
+                });
+            }
+
+            resetPattern() {
+                // Reset to original default pattern
+                this.pattern = {
+                    kick: [true, false, false, false,  false, false, true, false,  true, false, false, false,  false, false, true, false],
+                    snare: [false, false, false, false,  true, false, false, false,  false, false, false, false,  true, false, false, false],
+                    hihat: [1, 0, 1, 0,  1, 0, 1, 0,  1, 0, 1, 0,  1, 0, 1, 0]  // 0=off, 1=closed, 2=open
+                };
+
+                // Update visual state for all rows
+                Object.keys(this.pattern).forEach(sound => {
+                    const row = document.querySelector(`.drum-row[data-sound="${sound}"]`);
+                    
+                    if (sound === 'hihat') {
+                        // Handle three-state hi-hat
+                        this.pattern[sound].forEach((state, stepIndex) => {
+                            const stepElement = row.querySelector(`.step[data-step="${stepIndex}"]`);
+                            if (state === 1) {
+                                // Closed hi-hat
+                                stepElement.classList.add('active');
+                                stepElement.classList.remove('open');
+                            } else if (state === 2) {
+                                // Open hi-hat
+                                stepElement.classList.add('active', 'open');
+                            } else {
+                                // Off
+                                stepElement.classList.remove('active', 'open');
+                            }
+                        });
+                    } else {
+                        // Handle kick and snare (boolean)
+                        this.pattern[sound].forEach((active, stepIndex) => {
+                            const stepElement = row.querySelector(`.step[data-step="${stepIndex}"]`);
+                            if (active) {
+                                stepElement.classList.add('active');
+                            } else {
+                                stepElement.classList.remove('active');
+                            }
+                        });
+                    }
                 });
             }
 
