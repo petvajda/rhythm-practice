@@ -1057,6 +1057,22 @@
                             <input type="checkbox" id="triplet_pattern7" value="triplet_pattern7" class="pattern-triplet">
                             <label for="triplet_pattern7">R8+R8+8</label>
                         </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="triplet_quarter1" value="triplet_quarter1" class="pattern-triplet">
+                            <label for="triplet_quarter1">4+4+4</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="triplet_quarter2" value="triplet_quarter2" class="pattern-triplet">
+                            <label for="triplet_quarter2">R4+4+4</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="triplet_quarter3" value="triplet_quarter3" class="pattern-triplet">
+                            <label for="triplet_quarter3">4+R4+4</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="triplet_quarter4" value="triplet_quarter4" class="pattern-triplet">
+                            <label for="triplet_quarter4">4+4+R4</label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1103,72 +1119,134 @@
         let selectedLevel = 1;
         
         const levelDefinitions = {
+            // === BASIC PATTERNS (Levels 1-6) ===
             1: {
-                name: 'Whole Notes',
-                description: 'Simple whole notes and whole rests. The most basic rhythm patterns.',
+                name: 'Level 1: Whole Notes',
+                description: 'Simple whole notes and whole rests.',
                 patterns: ['z4', 'E,4']
             },
             2: {
-                name: 'Half Notes',
-                description: 'Half notes in different combinations. Building blocks for rhythm.',
+                name: 'Level 2: Half Notes',
+                description: 'Half notes in different combinations.',
                 patterns: ['E,2E,2', 'z2E,2', 'E,2z2']
             },
             3: {
-                name: 'Quarter Notes',
-                description: 'Quarter note patterns with rests. Foundation of beat subdivision.',
+                name: 'Level 3: Quarter Notes',
+                description: 'Quarter note patterns with rests.',
                 patterns: ['E,E,E,E,', 'zE,E,E,', 'E,E,E,z', 'E,E,zE,', 'E,zE,z', 'E,zE,E,', 'zE,E,z', 'zE,zE,']
             },
             4: {
-                name: '1-Note Patterns',
+                name: 'Level 4: 1-Note Patterns',
                 description: 'Single note with various rest combinations per beat.',
                 patterns: ['zE,z2', 'E,z3', 'z3E,', 'z2E,z', 'z2E,2', 'E,2z2']
             },
             5: {
-                name: '2-Note Patterns',
+                name: 'Level 5: 2-Note Patterns',
                 description: 'Two notes per beat with different rhythmic combinations.',
                 patterns: ['z2E,E,', 'E,E,z2', 'zE,E,z', 'E,E,3', 'E,3E,', 'E,z2E,', 'E,2E,2', 'zE,zE,', 'E,zE,z', 'E,E,2z', 'zE,E,2']
             },
             6: {
-                name: '3-Note Patterns',
-                description: 'Three notes per beat. More complex rhythmic cells.',
+                name: 'Level 6: 3-Note Patterns',
+                description: 'Three notes per beat.',
                 patterns: ['zE,E,E,', 'E,E,E,z', 'E,E,E,2', 'E,2E,E,', 'E,E,2E,', 'E,E,zE,']
             },
+            
+            // === TRIPLETS (Levels 7-9) ===
             7: {
-                name: 'Triplets',
-                description: 'Eighth note triplets with and without rests.',
+                name: 'Level 7: Eighth Note Triplets',
+                description: 'Eighth note triplets (each triplet = 1 beat).',
                 patterns: ['(3E,2E,2E,2', '(3E,2z2E,2', '(3z2E,2E,2', '(3E,2E,2z2', '(3E,2z2z2', '(3z2E,2z2', '(3z2z2E,2']
             },
             8: {
-                name: 'Simple + 1-Note Combined',
-                description: 'Mixing whole notes, half notes, quarter notes, and 1-note patterns.',
-                patterns: ['z4', 'E,4', 'E,2E,2', 'z2E,2', 'E,2z2', 'E,E,E,E,', 'zE,z2', 'E,z3', 'z3E,', 'z2E,z', 'z2E,2', 'E,2z2']
+                name: 'Level 8: Quarter Note Triplets',
+                description: 'Quarter note triplets (2 beats each).',
+                patterns: ['(3E,4E,4E,4', '(3z4E,4E,4', '(3E,4z4E,4', '(3E,4E,4z4']
             },
             9: {
-                name: 'All Patterns Combined',
-                description: 'Complete pattern vocabulary from Levels 1-7.',
-                patterns: ['z4', 'E,4', 'E,2E,2', 'z2E,2', 'E,2z2', 'E,E,E,E,', 'zE,E,E,', 'E,E,E,z', 'E,E,zE,', 'E,zE,z', 'E,zE,E,', 'zE,E,z', 'zE,zE,', 'zE,z2', 'E,z3', 'z3E,', 'z2E,z', 'z2E,2', 'E,2z2', 'z2E,E,', 'E,E,z2', 'zE,E,z', 'E,E,3', 'E,3E,', 'E,z2E,', 'zE,zE,', 'E,zE,z', 'E,E,2z', 'zE,E,2', 'zE,E,E,', 'E,E,E,z', 'E,E,E,2', 'E,2E,E,', 'E,E,2E,', 'E,E,zE,', '(3E,2E,2E,2', '(3E,2z2E,2', '(3z2E,2E,2', '(3E,2E,2z2', '(3E,2z2z2', '(3z2E,2z2', '(3z2z2E,2']
+                name: 'Level 9: Mixed Triplets',
+                description: 'Combining eighth and quarter note triplets.',
+                patterns: ['(3E,2E,2E,2', '(3E,2z2E,2', '(3z2E,2E,2', '(3E,2E,2z2', '(3E,2z2z2', '(3z2E,2z2', '(3z2z2E,2', '(3E,4E,4E,4', '(3z4E,4E,4', '(3E,4z4E,4', '(3E,4E,4z4']
             },
+            
+            // === SIMPLE COMBINATIONS (Levels 10-13) ===
             10: {
-                name: 'Review',
-                description: 'Comprehensive review using all patterns from Levels 1-7.',
-                patterns: ['z4', 'E,4', 'E,2E,2', 'z2E,2', 'E,2z2', 'E,E,E,E,', 'zE,E,E,', 'E,E,E,z', 'E,E,zE,', 'E,zE,z', 'E,zE,E,', 'zE,E,z', 'zE,zE,', 'zE,z2', 'E,z3', 'z3E,', 'z2E,z', 'z2E,2', 'E,2z2', 'z2E,E,', 'E,E,z2', 'zE,E,z', 'E,E,3', 'E,3E,', 'E,z2E,', 'zE,zE,', 'E,zE,z', 'E,E,2z', 'zE,E,2', 'zE,E,E,', 'E,E,E,z', 'E,E,E,2', 'E,2E,E,', 'E,E,2E,', 'E,E,zE,', '(3E,2E,2E,2', '(3E,2z2E,2', '(3z2E,2E,2', '(3E,2E,2z2', '(3E,2z2z2', '(3z2E,2z2', '(3z2z2E,2']
+                name: 'Level 10: Simple Combined',
+                description: 'Whole + Half + Quarter notes.',
+                patterns: ['z4', 'E,4', 'E,2E,2', 'z2E,2', 'E,2z2', 'E,E,E,E,', 'zE,E,E,', 'E,E,E,z', 'E,E,zE,', 'E,zE,z', 'E,zE,E,', 'zE,E,z', 'zE,zE,']
+            },
+            11: {
+                name: 'Level 11: Simple + 1-Note',
+                description: 'Levels 1-4 combined.',
+                patterns: ['z4', 'E,4', 'E,2E,2', 'z2E,2', 'E,2z2', 'E,E,E,E,', 'zE,E,E,', 'E,E,E,z', 'E,E,zE,', 'E,zE,z', 'E,zE,E,', 'zE,E,z', 'zE,zE,', 'zE,z2', 'E,z3', 'z3E,', 'z2E,z', 'z2E,2', 'E,2z2']
+            },
+            12: {
+                name: 'Level 12: Simple + 2-Note',
+                description: 'Levels 1-3 + 5 combined.',
+                patterns: ['z4', 'E,4', 'E,2E,2', 'z2E,2', 'E,2z2', 'E,E,E,E,', 'zE,E,E,', 'E,E,E,z', 'E,E,zE,', 'E,zE,z', 'E,zE,E,', 'zE,E,z', 'zE,zE,', 'z2E,E,', 'E,E,z2', 'zE,E,z', 'E,E,3', 'E,3E,', 'E,z2E,', 'E,2E,2', 'zE,zE,', 'E,zE,z', 'E,E,2z', 'zE,E,2']
+            },
+            13: {
+                name: 'Level 13: Simple + 3-Note',
+                description: 'Levels 1-3 + 6 combined.',
+                patterns: ['z4', 'E,4', 'E,2E,2', 'z2E,2', 'E,2z2', 'E,E,E,E,', 'zE,E,E,', 'E,E,E,z', 'E,E,zE,', 'E,zE,z', 'E,zE,E,', 'zE,E,z', 'zE,zE,', 'zE,E,E,', 'E,E,E,z', 'E,E,E,2', 'E,2E,E,', 'E,E,2E,', 'E,E,zE,']
+            },
+            
+            // === NOTE PATTERN COMBINATIONS (Levels 14-17) ===
+            14: {
+                name: 'Level 14: 1-Note + 2-Note',
+                description: 'Levels 4-5 combined.',
+                patterns: ['zE,z2', 'E,z3', 'z3E,', 'z2E,z', 'z2E,2', 'E,2z2', 'z2E,E,', 'E,E,z2', 'zE,E,z', 'E,E,3', 'E,3E,', 'E,z2E,', 'E,2E,2', 'zE,zE,', 'E,zE,z', 'E,E,2z', 'zE,E,2']
+            },
+            15: {
+                name: 'Level 15: 1-Note + 3-Note',
+                description: 'Levels 4 + 6 combined.',
+                patterns: ['zE,z2', 'E,z3', 'z3E,', 'z2E,z', 'z2E,2', 'E,2z2', 'zE,E,E,', 'E,E,E,z', 'E,E,E,2', 'E,2E,E,', 'E,E,2E,', 'E,E,zE,']
+            },
+            16: {
+                name: 'Level 16: 2-Note + 3-Note',
+                description: 'Levels 5-6 combined.',
+                patterns: ['z2E,E,', 'E,E,z2', 'zE,E,z', 'E,E,3', 'E,3E,', 'E,z2E,', 'E,2E,2', 'zE,zE,', 'E,zE,z', 'E,E,2z', 'zE,E,2', 'zE,E,E,', 'E,E,E,z', 'E,E,E,2', 'E,2E,E,', 'E,E,2E,', 'E,E,zE,']
+            },
+            17: {
+                name: 'Level 17: All Note Patterns',
+                description: 'Levels 4-6 combined (1, 2, and 3-note patterns).',
+                patterns: ['zE,z2', 'E,z3', 'z3E,', 'z2E,z', 'z2E,2', 'E,2z2', 'z2E,E,', 'E,E,z2', 'zE,E,z', 'E,E,3', 'E,3E,', 'E,z2E,', 'E,2E,2', 'zE,zE,', 'E,zE,z', 'E,E,2z', 'zE,E,2', 'zE,E,E,', 'E,E,E,z', 'E,E,E,2', 'E,2E,E,', 'E,E,2E,', 'E,E,zE,']
+            },
+            
+            // === TRIPLET COMBINATIONS (Levels 18-20) ===
+            18: {
+                name: 'Level 18: Note Patterns + Eighth Triplets',
+                description: 'Levels 4-7 combined.',
+                patterns: ['zE,z2', 'E,z3', 'z3E,', 'z2E,z', 'z2E,2', 'E,2z2', 'z2E,E,', 'E,E,z2', 'zE,E,z', 'E,E,3', 'E,3E,', 'E,z2E,', 'E,2E,2', 'zE,zE,', 'E,zE,z', 'E,E,2z', 'zE,E,2', 'zE,E,E,', 'E,E,E,z', 'E,E,E,2', 'E,2E,E,', 'E,E,2E,', 'E,E,zE,', '(3E,2E,2E,2', '(3E,2z2E,2', '(3z2E,2E,2', '(3E,2E,2z2', '(3E,2z2z2', '(3z2E,2z2', '(3z2z2E,2']
+            },
+            19: {
+                name: 'Level 19: Note Patterns + Quarter Triplets',
+                description: 'Levels 4-6 + 8 combined.',
+                patterns: ['zE,z2', 'E,z3', 'z3E,', 'z2E,z', 'z2E,2', 'E,2z2', 'z2E,E,', 'E,E,z2', 'zE,E,z', 'E,E,3', 'E,3E,', 'E,z2E,', 'E,2E,2', 'zE,zE,', 'E,zE,z', 'E,E,2z', 'zE,E,2', 'zE,E,E,', 'E,E,E,z', 'E,E,E,2', 'E,2E,E,', 'E,E,2E,', 'E,E,zE,', '(3E,4E,4E,4', '(3z4E,4E,4', '(3E,4z4E,4', '(3E,4E,4z4']
+            },
+            20: {
+                name: 'Level 20: Note Patterns + All Triplets',
+                description: 'Levels 4-9 combined.',
+                patterns: ['zE,z2', 'E,z3', 'z3E,', 'z2E,z', 'z2E,2', 'E,2z2', 'z2E,E,', 'E,E,z2', 'zE,E,z', 'E,E,3', 'E,3E,', 'E,z2E,', 'E,2E,2', 'zE,zE,', 'E,zE,z', 'E,E,2z', 'zE,E,2', 'zE,E,E,', 'E,E,E,z', 'E,E,E,2', 'E,2E,E,', 'E,E,2E,', 'E,E,zE,', '(3E,2E,2E,2', '(3E,2z2E,2', '(3z2E,2E,2', '(3E,2E,2z2', '(3E,2z2z2', '(3z2E,2z2', '(3z2z2E,2', '(3E,4E,4E,4', '(3z4E,4E,4', '(3E,4z4E,4', '(3E,4E,4z4']
+            },
+            
+            // === COMPREHENSIVE LEVELS (Levels 21-22) ===
+            21: {
+                name: 'Level 21: Everything Except Triplets',
+                description: 'All patterns from Levels 1-6.',
+                patterns: ['z4', 'E,4', 'E,2E,2', 'z2E,2', 'E,2z2', 'E,E,E,E,', 'zE,E,E,', 'E,E,E,z', 'E,E,zE,', 'E,zE,z', 'E,zE,E,', 'zE,E,z', 'zE,zE,', 'zE,z2', 'E,z3', 'z3E,', 'z2E,z', 'z2E,2', 'E,2z2', 'z2E,E,', 'E,E,z2', 'zE,E,z', 'E,E,3', 'E,3E,', 'E,z2E,', 'E,2E,2', 'zE,zE,', 'E,zE,z', 'E,E,2z', 'zE,E,2', 'zE,E,E,', 'E,E,E,z', 'E,E,E,2', 'E,2E,E,', 'E,E,2E,', 'E,E,zE,']
+            },
+            22: {
+                name: 'Level 22: Everything',
+                description: 'All patterns from Levels 1-9 combined.',
+                patterns: ['z4', 'E,4', 'E,2E,2', 'z2E,2', 'E,2z2', 'E,E,E,E,', 'zE,E,E,', 'E,E,E,z', 'E,E,zE,', 'E,zE,z', 'E,zE,E,', 'zE,E,z', 'zE,zE,', 'zE,z2', 'E,z3', 'z3E,', 'z2E,z', 'z2E,2', 'E,2z2', 'z2E,E,', 'E,E,z2', 'zE,E,z', 'E,E,3', 'E,3E,', 'E,z2E,', 'E,2E,2', 'zE,zE,', 'E,zE,z', 'E,E,2z', 'zE,E,2', 'zE,E,E,', 'E,E,E,z', 'E,E,E,2', 'E,2E,E,', 'E,E,2E,', 'E,E,zE,', '(3E,2E,2E,2', '(3E,2z2E,2', '(3z2E,2E,2', '(3E,2E,2z2', '(3E,2z2z2', '(3z2E,2z2', '(3z2z2E,2', '(3E,4E,4E,4', '(3z4E,4E,4', '(3E,4z4E,4', '(3E,4E,4z4']
             }
         };
-        
-        // Levels 11-20 use same patterns as level 10
-        for (let i = 11; i <= 20; i++) {
-            levelDefinitions[i] = {
-                name: `Extended Practice`,
-                description: `Extended practice using all pattern types. User controls bar count.`,
-                patterns: levelDefinitions[10].patterns
-            };
-        }
         
         function renderLevelsList() {
             const container = document.getElementById('levelsList');
             container.innerHTML = '';
             
-            for (let level = 1; level <= 20; level++) {
+            for (let level = 1; level <= 22; level++) {
                 const def = levelDefinitions[level];
                 
                 const levelCard = document.createElement('div');
@@ -1257,6 +1335,28 @@ ${examplePatterns.join(' | ')}|]`;
                     });
                 }, 50 * level); // Stagger rendering
             }
+            
+            // Scroll to selected level after rendering
+            // Cancel any pending scroll from previous render
+            if (window.levelScrollTimeout) {
+                clearTimeout(window.levelScrollTimeout);
+            }
+            
+            window.levelScrollTimeout = setTimeout(() => {
+                let levelToShow = selectedLevel;
+                
+                // If in custom mode (coming from patterns), default to level 1
+                if (currentMode === 'custom') {
+                    levelToShow = 1;
+                }
+                
+                if (levelToShow > 0 && levelToShow <= 22) {
+                    const selectedCard = container.children[levelToShow - 1];
+                    if (selectedCard) {
+                        selectedCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            }, 50 * 22 + 100); // Wait for all previews to render
         }
         
         function selectLevel(level) {
@@ -1307,6 +1407,11 @@ ${examplePatterns.join(' | ')}|]`;
             const page1 = document.getElementById('page1');
             const page3 = document.getElementById('page3');
             const navButton = document.getElementById('navButton');
+            
+            // Cancel any pending scroll animation
+            if (window.levelScrollTimeout) {
+                clearTimeout(window.levelScrollTimeout);
+            }
             
             // Simply close and go back to main screen (no confirmation, no changes)
             page3.classList.remove('active');
@@ -1382,14 +1487,20 @@ ${examplePatterns.join(' | ')}|]`;
             '3note_pattern5': { abc: 'E,E,2E,' },
             '3note_pattern6': { abc: 'E,E,zE,' },
             
-            // Triplets (7 patterns)
+            // Triplets - Eighth notes (7 patterns)
             triplet_pattern1: { abc: '(3E,2E,2E,2' },
             triplet_pattern2: { abc: '(3E,2z2E,2' },
             triplet_pattern3: { abc: '(3z2E,2E,2' },
             triplet_pattern4: { abc: '(3E,2E,2z2' },
             triplet_pattern5: { abc: '(3E,2z2z2' },
             triplet_pattern6: { abc: '(3z2E,2z2' },
-            triplet_pattern7: { abc: '(3z2z2E,2' }
+            triplet_pattern7: { abc: '(3z2z2E,2' },
+            
+            // Triplets - Quarter notes (4 patterns) - Each is 2 beats
+            triplet_quarter1: { abc: '(3E,4E,4E,4' },       // One quarter triplet (2 beats)
+            triplet_quarter2: { abc: '(3z4E,4E,4' },        // Rest + 2 quarter notes
+            triplet_quarter3: { abc: '(3E,4z4E,4' },        // Quarter + rest + quarter  
+            triplet_quarter4: { abc: '(3E,4E,4z4' }         // 2 quarters + rest
         };
 
         let currentABC = '';
@@ -1515,7 +1626,8 @@ K:C clef=bass
                     .filter(cb => {
                         return cb.value && (
                             cb.value.includes('pattern') || 
-                            cb.value.startsWith('simple_')
+                            cb.value.startsWith('simple_') ||
+                            cb.value.startsWith('triplet_')
                         );
                     })
                     .map(cb => cb.value);
@@ -1546,26 +1658,70 @@ K:C clef=bass
 `;
             let bars = [];
             
-            // Each bar needs exactly 4 patterns (each pattern = 4 sixteenths = 1 quarter note)
-            // Total: 4 patterns × 4 sixteenths = 16 sixteenths per bar (4/4 time)
-            currentPatternStructure = []; // Reset pattern structure
+            // Generate bars - each bar must be exactly 4 beats
+            currentPatternStructure = [];
             for (let i = 0; i < barCount; i++) {
                 let barPatterns = [];
-                for (let j = 0; j < 4; j++) {
+                let beatsUsed = 0;
+                const beatsPerBar = 4;
+                
+                // Keep adding patterns until we have exactly 4 beats
+                let attempts = 0;
+                const maxAttempts = 100;
+                
+                while (beatsUsed < beatsPerBar && attempts < maxAttempts) {
+                    attempts++;
                     const randomPattern = selectedPatterns[Math.floor(Math.random() * selectedPatterns.length)];
-                    barPatterns.push(randomPattern); // Already ABC notation from getSelectedPatterns
+                    
+                    // Determine how many beats this pattern is worth
+                    let patternBeats;
+                    
+                    // Quarter note triplets are 2 beats each
+                    // Look for (3 followed by notes/rests with ,4 durations
+                    // Match each (3 separately to count multiple triplets
+                    const quarterTripletMatches = randomPattern.match(/\(3/g);
+                    const hasQuarterNotes = /,4/.test(randomPattern);
+                    
+                    if (quarterTripletMatches && hasQuarterNotes) {
+                        // Each (3 marker followed by ,4 notes = one quarter triplet = 2 beats
+                        const quarterTripletCount = quarterTripletMatches.length;
+                        patternBeats = quarterTripletCount * 2;
+                    } else {
+                        // Everything else (eighth triplets, regular patterns) = 1 beat
+                        patternBeats = 1;
+                    }
+                    
+                    // Check if adding this pattern would fit in the bar
+                    if (beatsUsed + patternBeats <= beatsPerBar) {
+                        barPatterns.push(randomPattern);
+                        beatsUsed += patternBeats;
+                    }
+                    // If it doesn't fit, just try a different pattern (continue loop)
                 }
+                
                 bars.push(barPatterns.join(' '));
-                currentPatternStructure.push(barPatterns); // Store for redrawing
+                currentPatternStructure.push(barPatterns);
+                
+                // Debug: log if bar has wrong beat count
+                if (beatsUsed !== 4) {
+                    console.warn(`Bar ${i+1} has ${beatsUsed} beats (should be 4):`, barPatterns);
+                }
             }
             
             // Join bars with line breaks using $ which forces new line in rendered music
             // Don't add $ to the last bar to avoid extra empty line
             const rhythmBars = bars.map((bar, index) => {
+                // Check if this bar is a full-bar pattern:
+                // 1. Double quarter triplet: (3E,4E,4E,4(3E,4E,4E,4
+                // 2. Two single quarter triplets with space: (3E,4E,4E,4 (3E,4E,4E,4
+                const isDoublePattern = bar.includes('(3E,4E,4E,4(3') || bar.includes('(3z4E,4E,4(3');
+                const hasTwoSingles = (bar.match(/\(3[Ez],4/g) || []).length === 2;
+                const isFullBar = isDoublePattern || hasTwoSingles;
+                
                 if (index < bars.length - 1) {
-                    return bar + ' |$';
+                    return (isFullBar ? bar + '|$' : bar + ' |$');
                 }
-                return bar + ' |';
+                return (isFullBar ? bar + '|' : bar + ' |');
             }).join('\n');
             
             abcNotation += rhythmBars + ']';
@@ -1619,18 +1775,20 @@ K:C clef=bass
                 const tokens = cleanLine.split(/\s+/);
                 
                 tokens.forEach(token => {
-                    // Check if this token starts with a triplet marker
-                    let tripletCount = 0;
-                    if (token.startsWith('(3')) {
-                        tripletCount = 3; // Next 3 notes are triplets
-                        token = token.substring(2); // Remove (3 prefix
-                    }
-                    
-                    // Count characters in token to determine duration
+                    // Parse all notes and triplet markers in this token
                     let i = 0;
-                    let notesInToken = 0;
+                    let tripletCount = 0;  // How many notes left in current triplet
+                    let notesInTriplet = 0;  // How many notes processed in current triplet
                     
                     while (i < token.length) {
+                        // Check for triplet marker
+                        if (token[i] === '(' && i + 1 < token.length && token[i + 1] === '3') {
+                            tripletCount = 3;  // Start new triplet
+                            notesInTriplet = 0;
+                            i += 2;  // Skip (3
+                            continue;
+                        }
+                        
                         const char = token[i];
                         
                         if (char === 'z') {
@@ -1642,13 +1800,19 @@ K:C clef=bass
                             } else {
                                 i += 1;
                             }
-                            // Apply triplet ratio if this is one of the triplet notes
-                            const isTriplet = tripletCount > 0 && notesInToken < tripletCount;
+                            // Apply triplet ratio if we're in a triplet
+                            const isTriplet = tripletCount > 0 && notesInTriplet < 3;
                             const actualDuration = isTriplet ? duration * (2/3) : duration;
                             
                             // Just update time - don't add rests to array
                             currentTime += actualDuration;
-                            notesInToken++;
+                            
+                            if (isTriplet) {
+                                notesInTriplet++;
+                                if (notesInTriplet >= 3) {
+                                    tripletCount = 0;  // Triplet complete
+                                }
+                            }
                         } else if (char === 'E' || char === 'A' || char === 'D' || char === 'G' || char === 'C' || char === 'F' || char === 'B') {
                             // Note - check for commas
                             let pitch = char;
@@ -1665,8 +1829,8 @@ K:C clef=bass
                                 i += 1;
                             }
                             
-                            // Apply triplet ratio if this is one of the triplet notes
-                            const isTriplet = tripletCount > 0 && notesInToken < tripletCount;
+                            // Apply triplet ratio if we're in a triplet
+                            const isTriplet = tripletCount > 0 && notesInTriplet < 3;
                             const actualDuration = isTriplet ? duration * (2/3) : duration;
                             
                             notes.push({
@@ -1676,7 +1840,13 @@ K:C clef=bass
                             });
                             
                             currentTime += actualDuration;
-                            notesInToken++;
+                            
+                            if (isTriplet) {
+                                notesInTriplet++;
+                                if (notesInTriplet >= 3) {
+                                    tripletCount = 0;  // Triplet complete
+                                }
+                            }
                         } else {
                             i += 1;
                         }
