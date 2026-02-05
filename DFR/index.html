@@ -842,6 +842,15 @@
         function setupFirebaseListeners() {
             if (!database) return;
             
+            // Sync master songs to Firebase once
+            database.ref('masterSongs').once('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    // First time - upload master songs
+                    database.ref('masterSongs').set(masterSongs);
+                    console.log('✅ Master songs uploaded to Firebase');
+                }
+            });
+            
             // Listen for setlist changes
             database.ref('setlists').on('value', (snapshot) => {
                 const firebaseData = snapshot.val();
@@ -1098,45 +1107,83 @@
             closeFirebaseSetup();
         }
 
+        // Master song database
+        const masterSongs = {
+            "aint-no-mountain": { title: "Ain't No Mountain High Enough", author: "Marvin Gaye & Tammi Terrell", key: "" },
+            "aint-nobody": { title: "Ain't Nobody", author: "Chaka Khan", key: "" },
+            "cant-fight-moonlight": { title: "Can't Fight The Moonlight", author: "LeAnn Rimes", key: "" },
+            "chelsea-dagger": { title: "Chelsea Dagger", author: "The Fratellis", key: "" },
+            "cosmic-girl": { title: "Cosmic Girl", author: "Jamiroquai", key: "" },
+            "dont-start-now": { title: "Don't Start Now", author: "Dua Lipa", key: "" },
+            "forget-you": { title: "Forget You", author: "CeeLo Green", key: "" },
+            "free-from-desire": { title: "Free From Desire", author: "Gala", key: "" },
+            "funky-music": { title: "Play That Funky Music", author: "Wild Cherry", key: "" },
+            "get-lucky": { title: "Get Lucky", author: "Daft Punk ft. Pharrell Williams", key: "" },
+            "gimme-gimme-gimme": { title: "Gimme! Gimme! Gimme! (A Man After Midnight)", author: "ABBA", key: "" },
+            "hot-stuff": { title: "Hot Stuff", author: "Donna Summer", key: "" },
+            "i-will-survive": { title: "I Will Survive", author: "Gloria Gaynor", key: "G" },
+            "i-wish-superstition": { title: "I Wish / Superstition", author: "Stevie Wonder", key: "E" },
+            "love-foolosophy": { title: "Love Foolosophy", author: "Jamiroquai", key: "" },
+            "love-shack": { title: "Love Shack", author: "The B-52's", key: "" },
+            "man-i-feel-like-a-woman": { title: "Man! I Feel Like A Woman!", author: "Shania Twain", key: "" },
+            "mr-brightside": { title: "Mr. Brightside", author: "The Killers", key: "" },
+            "murder-on-the-dancefloor": { title: "Murder On The Dancefloor", author: "Sophie Ellis-Bextor", key: "" },
+            "pink-pony-club": { title: "Pink Pony Club", author: "Chappell Roan", key: "" },
+            "proud-mary": { title: "Proud Mary", author: "Tina Turner", key: "" },
+            "sex-on-fire": { title: "Sex On Fire", author: "Kings of Leon", key: "" },
+            "shes-so-lovely": { title: "She's So Lovely", author: "Scouting for Girls", key: "" },
+            "shut-up-and-dance": { title: "Shut Up And Dance", author: "Walk the Moon", key: "" },
+            "signed-sealed-delivered": { title: "Signed, Sealed, Delivered I'm Yours", author: "Stevie Wonder", key: "" },
+            "simply-the-best": { title: "Simply The Best", author: "Tina Turner", key: "" },
+            "sing-it-back": { title: "Sing It Back", author: "Moloko", key: "" },
+            "summer-of-69": { title: "Summer of '69", author: "Bryan Adams", key: "" },
+            "teenage-dirtbag": { title: "Teenage Dirtbag", author: "Wheatus", key: "" },
+            "this-love": { title: "This Love", author: "Maroon 5", key: "" },
+            "treasure": { title: "Treasure", author: "Bruno Mars", key: "" },
+            "valerie": { title: "Valerie", author: "Amy Winehouse", key: "" },
+            "we-are-family": { title: "We Are Family", author: "Sister Sledge", key: "" }
+        };
+
+        // Default setlists now use song IDs
         const defaultSetlists = {
             set1: [
-                { title: 'Treasure', author: 'Bruno Mars', key: '' },
-                { title: 'Murder On The Dancefloor', author: 'Sophie Ellis-Bextor', key: '' },
-                { title: 'Valerie', author: 'Amy Winehouse', key: '' },
-                { title: 'Pink Pony Club', author: 'Chappell Roan', key: '' },
-                { title: 'Love foolosophy', author: 'Jamiroquai', key: '' },
-                { title: 'We Are Family', author: 'Sister Sledge', key: '' },
-                { title: "Ain't Nobody", author: 'Chaka Khan', key: '' },
-                { title: 'Aint No Mountain', author: 'Marvin Gaye', key: 'record key' },
-                { title: 'I wish / Superstition', author: 'Stevie Wonder', key: 'E' },
-                { title: 'This Love', author: 'Maroon 5', key: '' },
-                { title: 'Love shack', author: 'The B-52s', key: '' },
-                { title: 'Funky music', author: 'Wild Cherry', key: '' },
-                { title: "Can't Fight The Moonlight", author: 'LeAnn Rimes', key: '' },
-                { title: 'Teenage Dirtbag', author: 'Wheatus', key: '' },
-                { title: 'Simply The Best', author: 'Tina Turner', key: '' }
+                "treasure",
+                "murder-on-the-dancefloor",
+                "valerie",
+                "pink-pony-club",
+                "love-foolosophy",
+                "we-are-family",
+                "aint-nobody",
+                "aint-no-mountain",
+                "i-wish-superstition",
+                "this-love",
+                "love-shack",
+                "funky-music",
+                "cant-fight-moonlight",
+                "teenage-dirtbag",
+                "simply-the-best"
             ],
             set2: [
-                { title: 'Signed, Sealed Delivered', author: 'Stevie Wonder', key: '' },
-                { title: "Don't Start Now", author: 'Dua Lipa', key: '' },
-                { title: 'Sing It Back', author: 'Moloko', key: '' },
-                { title: 'Cosmic Girl', author: 'Jamiroquai', key: '' },
-                { title: 'Forget You', author: 'CeeLo Green', key: '' },
-                { title: "She's so lovely", author: 'Scouting for Girls', key: '' },
-                { title: 'Hot Stuff', author: 'Donna Summer', key: '' },
-                { title: 'Get Lucky', author: 'Daft Punk', key: '' },
-                { title: 'Free From Desire', author: 'Gala', key: '' },
-                { title: 'Gimme, Gimme, Gimme', author: 'ABBA', key: '' },
-                { title: 'Man, I Feel Like A Woman', author: 'Shania Twain', key: '' },
-                { title: 'Proud Mary', author: 'Tina Turner', key: '' },
-                { title: 'Mr Brightside', author: 'The Killers', key: '' },
-                { title: 'Chelsea Dagger', author: 'The Fratellis', key: '' },
-                { title: 'I Will Survive', author: 'Gloria Gaynor', key: 'G' }
+                "signed-sealed-delivered",
+                "dont-start-now",
+                "sing-it-back",
+                "cosmic-girl",
+                "forget-you",
+                "shes-so-lovely",
+                "hot-stuff",
+                "get-lucky",
+                "free-from-desire",
+                "gimme-gimme-gimme",
+                "man-i-feel-like-a-woman",
+                "proud-mary",
+                "mr-brightside",
+                "chelsea-dagger",
+                "i-will-survive"
             ],
             spares: [
-                { title: 'Shut Up And Dance', author: 'Walk The Moon', key: '' },
-                { title: 'Sex on fire', author: 'Kings of Leon', key: '' },
-                { title: 'Summer of 69', author: "Bryan Adams", key: '' }
+                "shut-up-and-dance",
+                "sex-on-fire",
+                "summer-of-69"
             ]
         };
 
@@ -1305,21 +1352,37 @@
             event.target.classList.add('active');
         }
 
-        function formatSongDisplay(song) {
-            // Handle both old string format and new object format
-            if (typeof song === 'string') {
-                // Legacy format - convert to object
-                return { title: song, author: '', key: '' };
+        function formatSongDisplay(songIdOrObject) {
+            // Handle song ID (string) - lookup in master
+            if (typeof songIdOrObject === 'string') {
+                const song = masterSongs[songIdOrObject];
+                if (song) {
+                    return {
+                        id: songIdOrObject,
+                        title: song.title,
+                        author: song.author,
+                        key: song.key
+                    };
+                }
+                // Fallback for unknown IDs
+                return { id: songIdOrObject, title: songIdOrObject, author: '', key: '' };
             }
-            return {
-                title: song.title || '',
-                author: song.author || '',
-                key: song.key || ''
-            };
+            
+            // Handle old object format (backwards compatibility)
+            if (songIdOrObject && typeof songIdOrObject === 'object') {
+                return {
+                    id: songIdOrObject.id || '',
+                    title: songIdOrObject.title || '',
+                    author: songIdOrObject.author || '',
+                    key: songIdOrObject.key || ''
+                };
+            }
+            
+            return { id: '', title: '', author: '', key: '' };
         }
 
-        function getSongKey(song) {
-            const formatted = formatSongDisplay(song);
+        function getSongKey(songIdOrObject) {
+            const formatted = formatSongDisplay(songIdOrObject);
             return formatted.key ? ` (${formatted.key})` : '';
         }
 
@@ -1330,14 +1393,15 @@
             const container = document.getElementById(`${setId}-songs`);
             container.innerHTML = '';
             
-            setlist.setlists[setId].forEach((song, index) => {
-                const { title, author, key } = formatSongDisplay(song);
+            setlist.setlists[setId].forEach((songId, index) => {
+                const { id, title, author, key } = formatSongDisplay(songId);
                 const displayKey = key ? ` (${key})` : '';
                 
                 const songEl = document.createElement('div');
                 songEl.className = 'song';
                 songEl.dataset.index = index;
                 songEl.dataset.set = setId;
+                songEl.dataset.songId = id || songId; // Store the song ID
                 
                 songEl.innerHTML = `
                     <div class="drag-handle">☰</div>
@@ -1359,7 +1423,7 @@
                 // Tap on song info to show context menu
                 songInfo.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    showContextMenu(setId, index, song);
+                    showContextMenu(setId, index, songId);
                 });
                 
                 // Touch drag on handle for iOS
@@ -1465,24 +1529,16 @@
             
             songs.forEach((songEl, newIndex) => {
                 const oldIndex = parseInt(songEl.dataset.originalIndex || songEl.dataset.index);
-                const titleWithKey = songEl.querySelector('.song-title').textContent;
-                
-                // Extract just the title (remove key if present)
-                const title = titleWithKey.replace(/\s*\([^)]+\)\s*$/, '').trim();
+                const songId = songEl.dataset.songId;
                 
                 // Track which items moved
                 if (oldIndex !== newIndex) {
                     movedIndices.push(newIndex);
                 }
                 
-                // Find original song object
-                const originalSong = setlist.setlists[setId].find(s => {
-                    const formatted = formatSongDisplay(s);
-                    return formatted.title === title;
-                });
-                
-                if (originalSong) {
-                    newOrder.push(originalSong);
+                // Store the song ID
+                if (songId) {
+                    newOrder.push(songId);
                 }
             });
             
