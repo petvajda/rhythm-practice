@@ -761,9 +761,6 @@
 
             <div class="modal-buttons">
                 <button class="modal-btn" onclick="saveFirebaseConfig()">Save & Connect</button>
-                <button class="modal-btn" onclick="loadMasterSongsFromFile()" style="background: rgba(96, 165, 250, 0.2);">Load masterSongs.json</button>
-                <button class="modal-btn" onclick="uploadMasterSongs()" style="background: rgba(34, 197, 94, 0.2);">Upload Master Songs</button>
-                <button class="modal-btn" onclick="migrateSetlists()" style="background: rgba(96, 165, 250, 0.2);">Migrate Setlists to IDs</button>
                 <button class="modal-btn cancel" onclick="closeFirebaseSetup()">Close</button>
             </div>
 
@@ -845,7 +842,7 @@
         function setupFirebaseListeners() {
             if (!database) return;
             
-            console.log('🔍 Loading master songs from Firebase...');
+            console.log('🔍 Loading all data from Firebase...');
             
             // Load master songs from Firebase
             database.ref('masterSongs').once('value', (snapshot) => {
@@ -861,20 +858,20 @@
                         renderSet('spares');
                     }
                 } else {
-                    console.log('⚠️ Master songs not found in Firebase. Upload them using the settings button.');
+                    console.log('⚠️ Master songs not found in Firebase. Upload masterSongs.json using the settings button.');
                 }
             });
             
             // Listen for setlist changes
             database.ref('setlists').on('value', (snapshot) => {
                 const firebaseData = snapshot.val();
+                
                 if (firebaseData && !isSyncing) {
                     // Detect what changed
                     const changedSets = detectChanges(allSetlists, firebaseData);
                     
                     // Update local data from Firebase
                     allSetlists = firebaseData;
-                    localStorage.setItem('dfrAllSetlists', JSON.stringify(allSetlists));
                     
                     // Refresh UI if on home screen
                     if (document.getElementById('homeScreen').classList.contains('active')) {
@@ -894,6 +891,11 @@
                     }
                     
                     showSyncIndicator();
+                    console.log('✅ Setlists loaded from Firebase:', allSetlists.length, 'setlists');
+                } else if (!firebaseData) {
+                    console.log('⚠️ No setlists found in Firebase. Create your first setlist or upload data.');
+                    allSetlists = [];
+                    renderSetlistsList();
                 }
             });
         }
@@ -980,8 +982,7 @@
 
         function syncToFirebase() {
             if (!database || !isFirebaseConnected) {
-                // Fallback to local storage
-                localStorage.setItem('dfrAllSetlists', JSON.stringify(allSetlists));
+                console.warn('⚠️ Firebase not connected. Changes not synced.');
                 return;
             }
             
@@ -993,7 +994,6 @@
                 })
                 .catch((error) => {
                     console.error('Sync error:', error);
-                    localStorage.setItem('dfrAllSetlists', JSON.stringify(allSetlists));
                     isSyncing = false;
                 });
         }
@@ -1032,158 +1032,6 @@
 
         function closeFirebaseSetup() {
             document.getElementById('firebaseSetup').classList.remove('active');
-        }
-
-        function uploadMasterSongs() {
-            if (!database) {
-                alert('❌ Not connected to Firebase. Please configure and connect first.');
-                return;
-            }
-
-            const feedbackDiv = document.getElementById('firebaseFeedback');
-            
-            // Check if masterSongs is empty (need to load from file)
-            if (Object.keys(masterSongs).length === 0) {
-                feedbackDiv.className = 'firebase-feedback error';
-                feedbackDiv.textContent = '❌ No master songs loaded. Please upload masterSongs.json from GitHub first.';
-                return;
-            }
-
-            feedbackDiv.className = 'firebase-feedback connecting';
-            feedbackDiv.textContent = '🔄 Uploading master songs to Firebase...';
-
-            database.ref('masterSongs').set(masterSongs)
-                .then(() => {
-                    feedbackDiv.className = 'firebase-feedback success';
-                    feedbackDiv.textContent = '✅ Master songs uploaded successfully! Check Firebase Console.';
-                    console.log('✅ Master songs uploaded:', masterSongs);
-                })
-                .catch((error) => {
-                    feedbackDiv.className = 'firebase-feedback error';
-                    feedbackDiv.textContent = `❌ Upload failed: ${error.message}`;
-                    console.error('❌ Upload error:', error);
-                });
-        }
-
-        function loadMasterSongsFromFile() {
-            const feedbackDiv = document.getElementById('firebaseFeedback');
-            feedbackDiv.className = 'firebase-feedback connecting';
-            feedbackDiv.textContent = '🔄 Loading masterSongs.json from GitHub...';
-
-            // Fetch from GitHub Pages
-            fetch('masterSongs.json')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('File not found. Make sure masterSongs.json is uploaded to GitHub.');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.masterSongs) {
-                        masterSongs = data.masterSongs;
-                        feedbackDiv.className = 'firebase-feedback success';
-                        feedbackDiv.textContent = `✅ Loaded ${Object.keys(masterSongs).length} songs from file. Click "Upload Master Songs" to sync to Firebase.`;
-                        console.log('✅ Master songs loaded from file:', masterSongs);
-                    } else {
-                        throw new Error('Invalid file format. Expected { "masterSongs": {...} }');
-                    }
-                })
-                .catch((error) => {
-                    feedbackDiv.className = 'firebase-feedback error';
-                    feedbackDiv.textContent = `❌ Failed to load file: ${error.message}`;
-                    console.error('❌ Load error:', error);
-                });
-        }
-
-        function migrateSetlists() {
-            if (!database) {
-                alert('❌ Not connected to Firebase. Please configure and connect first.');
-                return;
-            }
-
-            const feedbackDiv = document.getElementById('firebaseFeedback');
-            feedbackDiv.className = 'firebase-feedback connecting';
-            feedbackDiv.textContent = '🔄 Migrating setlists to use song IDs...';
-
-            console.log('🔄 Starting setlist migration...');
-
-            // Get current setlists from Firebase
-            database.ref('setlists').once('value')
-                .then((snapshot) => {
-                    const currentSetlists = snapshot.val();
-                    
-                    if (!currentSetlists) {
-                        // No setlists exist - create default one
-                        const migratedSetlists = [{
-                            id: 'default',
-                            title: 'Master',
-                            date: new Date().toLocaleDateString('en-GB'),
-                            setlists: defaultSetlists
-                        }];
-                        
-                        return database.ref('setlists').set(migratedSetlists);
-                    }
-
-                    // Migrate existing setlists
-                    const migratedSetlists = currentSetlists.map(setlist => {
-                        const migratedSets = {};
-                        
-                        ['set1', 'set2', 'spares'].forEach(setId => {
-                            if (setlist.setlists && setlist.setlists[setId]) {
-                                migratedSets[setId] = setlist.setlists[setId].map(song => {
-                                    // If already a string ID, keep it
-                                    if (typeof song === 'string') {
-                                        return song;
-                                    }
-                                    
-                                    // If it's an object, find matching song ID
-                                    if (song && typeof song === 'object' && song.title) {
-                                        const songTitle = song.title.toLowerCase().trim();
-                                        
-                                        // Find matching song in master list
-                                        for (const [id, masterSong] of Object.entries(masterSongs)) {
-                                            if (masterSong.title.toLowerCase().trim() === songTitle) {
-                                                return id;
-                                            }
-                                        }
-                                        
-                                        console.warn('⚠️ Could not find ID for song:', song.title);
-                                        return 'unknown-song';
-                                    }
-                                    
-                                    return song;
-                                });
-                            } else {
-                                migratedSets[setId] = [];
-                            }
-                        });
-
-                        return {
-                            id: setlist.id || 'default',
-                            title: setlist.title || 'Untitled Setlist',
-                            date: setlist.date || new Date().toLocaleDateString('en-GB'),
-                            setlists: migratedSets
-                        };
-                    });
-
-                    console.log('📊 Migrated setlists:', migratedSetlists);
-                    return database.ref('setlists').set(migratedSetlists);
-                })
-                .then(() => {
-                    feedbackDiv.className = 'firebase-feedback success';
-                    feedbackDiv.textContent = '✅ Setlists migrated successfully! Refresh the app.';
-                    console.log('✅ Setlist migration complete!');
-                    
-                    // Reload after 2 seconds
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
-                })
-                .catch((error) => {
-                    feedbackDiv.className = 'firebase-feedback error';
-                    feedbackDiv.textContent = `❌ Migration failed: ${error.message}`;
-                    console.error('❌ Migration error:', error);
-                });
         }
 
         function saveFirebaseConfig() {
@@ -1276,19 +1124,8 @@
         // Master songs will be loaded from Firebase
         let masterSongs = {};
 
-        // Default setlists - empty by default, loaded from Firebase
-        const defaultSetlists = {
-            set1: [],
-            set2: [],
-            spares: []
-        };
-
-        let allSetlists = JSON.parse(localStorage.getItem('dfrAllSetlists')) || [{
-            id: 'default',
-            title: 'Master',
-            date: new Date().toLocaleDateString('en-GB'),
-            setlists: JSON.parse(JSON.stringify(defaultSetlists))
-        }];
+        // All setlists will be loaded from Firebase
+        let allSetlists = [];
 
         let currentSetlistId = null;
         let draggedElement = null;
@@ -1828,21 +1665,18 @@
         }
 
         function resetSet(setId) {
-            const setlist = getCurrentSetlist();
-            if (confirm(`Reset ${setId.toUpperCase()} to original order?`)) {
-                // Find the default setlist
-                const defaultSetlist = allSetlists.find(s => s.id === 'default');
-                
-                if (defaultSetlist && defaultSetlist.setlists[setId]) {
-                    setlist.setlists[setId] = [...defaultSetlist.setlists[setId]];
-                } else {
-                    // If no default found, use the hardcoded defaults
-                    setlist.setlists[setId] = [...defaultSetlists[setId]];
-                }
-                
-                saveAllSetlists();
-                renderSet(setId);
+            if (!confirm(`Reset ${setId.toUpperCase()}? This will clear all songs in this set.`)) {
+                return;
             }
+            
+            const setlist = getCurrentSetlist();
+            if (!setlist) return;
+            
+            // Clear the set
+            setlist.setlists[setId] = [];
+            
+            saveAllSetlists();
+            renderSet(setId);
         }
 
         // Initialize
@@ -1850,8 +1684,6 @@
         function startApp() {
             const hasFirebaseConfig = initFirebase();
             
-            renderSetlistsList();
-
             // Show Firebase setup on first launch if not configured
             if (!hasFirebaseConfig && !localStorage.getItem('demoModeAcknowledged')) {
                 setTimeout(() => {
