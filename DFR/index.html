@@ -250,6 +250,70 @@
             margin-top: 20px;
         }
 
+        .master-song-list {
+            max-height: 60vh;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        .master-song-item {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .master-song-item:active {
+            transform: scale(0.98);
+        }
+
+        .master-song-item.selected {
+            background: #3a3a3a;
+            border-color: #ffffff;
+        }
+
+        .master-song-title {
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .master-song-author {
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        .search-input {
+            background: #2a2a2a;
+            border: 2px solid #3a3a3a;
+            border-radius: 8px;
+            padding: 12px;
+            color: white;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #ffffff;
+        }
+
+        .add-song-indicator {
+            background: #10b981;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 10px;
+            text-align: center;
+        }
+
         .modal-btn {
             background: #2a2a2a;
             color: white;
@@ -361,21 +425,24 @@
             background: rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .reset-btn {
             background: rgba(255, 255, 255, 0.1);
             color: white;
             border: 2px solid rgba(255, 255, 255, 0.3);
-            padding: 10px 20px;
+            padding: 8px 16px;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            margin-bottom: 15px;
-            width: 100%;
+            margin-bottom: 0;
             backdrop-filter: blur(10px);
             transition: all 0.2s ease;
+            white-space: nowrap;
         }
 
         .reset-btn:active {
@@ -665,20 +732,29 @@
 
         <div class="content">
             <div class="setlist active" id="set1">
-                <div class="set-header">Set 1</div>
-                <button class="reset-btn" onclick="resetSet('set1')">Reset</button>
+                <div class="set-header">
+                    Set 1
+                    <button class="reset-btn" style="margin-left: auto; margin-right: 10px;" onclick="showAddSongModal('set1')">+ Add Songs</button>
+                    <button class="reset-btn" onclick="resetSet('set1')">Reset</button>
+                </div>
                 <div id="set1-songs"></div>
             </div>
 
             <div class="setlist" id="set2">
-                <div class="set-header">Set 2</div>
-                <button class="reset-btn" onclick="resetSet('set2')">Reset</button>
+                <div class="set-header">
+                    Set 2
+                    <button class="reset-btn" style="margin-left: auto; margin-right: 10px;" onclick="showAddSongModal('set2')">+ Add Songs</button>
+                    <button class="reset-btn" onclick="resetSet('set2')">Reset</button>
+                </div>
                 <div id="set2-songs"></div>
             </div>
 
             <div class="setlist" id="spares">
-                <div class="set-header">Spares</div>
-                <button class="reset-btn" onclick="resetSet('spares')">Reset</button>
+                <div class="set-header">
+                    Spares
+                    <button class="reset-btn" style="margin-left: auto; margin-right: 10px;" onclick="showAddSongModal('spares')">+ Add Songs</button>
+                    <button class="reset-btn" onclick="resetSet('spares')">Reset</button>
+                </div>
                 <div id="spares-songs"></div>
             </div>
         </div>
@@ -729,6 +805,19 @@
                 <button class="context-menu-btn delete" onclick="deleteSong()">Delete</button>
             </div>
             <button class="context-menu-cancel" onclick="closeContextMenu()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Add Song Modal -->
+    <div class="modal" id="addSongModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-title">Add Songs</div>
+            <input type="text" class="search-input" id="songSearch" placeholder="Search songs...">
+            <div class="master-song-list" id="masterSongList"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn" onclick="addSelectedSongs()">Add Selected Songs</button>
+                <button class="modal-btn cancel" onclick="closeAddSongModal()">Cancel</button>
+            </div>
         </div>
     </div>
 
@@ -1678,6 +1767,118 @@
             saveAllSetlists();
             renderSet(setId);
         }
+
+        // Add Song Modal Functions
+        let currentAddToSet = null;
+        let selectedSongIds = new Set();
+
+        function showAddSongModal(setId) {
+            currentAddToSet = setId;
+            selectedSongIds.clear();
+            renderMasterSongList();
+            document.getElementById('addSongModal').classList.add('active');
+            document.getElementById('songSearch').focus();
+        }
+
+        function closeAddSongModal() {
+            document.getElementById('addSongModal').classList.remove('active');
+            currentAddToSet = null;
+            selectedSongIds.clear();
+        }
+
+        function renderMasterSongList(searchTerm = '') {
+            const listEl = document.getElementById('masterSongList');
+            const masterSongs = firebaseData.masterSongs || {};
+            const setlist = getCurrentSetlist();
+            
+            // Get currently used songs in this setlist
+            const usedSongs = new Set();
+            if (setlist) {
+                Object.values(setlist.setlists).forEach(songs => {
+                    songs.forEach(songId => usedSongs.add(songId));
+                });
+            }
+            
+            // Filter and sort songs
+            const songs = Object.entries(masterSongs)
+                .filter(([id, song]) => {
+                    if (searchTerm) {
+                        const search = searchTerm.toLowerCase();
+                        return song.title.toLowerCase().includes(search) || 
+                               song.author.toLowerCase().includes(search);
+                    }
+                    return true;
+                })
+                .sort((a, b) => a[1].title.localeCompare(b[1].title));
+            
+            listEl.innerHTML = songs.map(([id, song]) => {
+                const isUsed = usedSongs.has(id);
+                const isSelected = selectedSongIds.has(id);
+                return `
+                    <div class="master-song-item ${isSelected ? 'selected' : ''}" 
+                         onclick="toggleSongSelection('${id}')"
+                         data-song-id="${id}">
+                        <div class="master-song-title">
+                            ${song.title}
+                            ${isUsed ? '<span style="color: #9ca3af; font-size: 12px; margin-left: 8px;">(Already in setlist)</span>' : ''}
+                        </div>
+                        <div class="master-song-author">${song.author}${song.key ? ` • Key: ${song.key}` : ''}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleSongSelection(songId) {
+            if (selectedSongIds.has(songId)) {
+                selectedSongIds.delete(songId);
+            } else {
+                selectedSongIds.add(songId);
+            }
+            renderMasterSongList(document.getElementById('songSearch').value);
+        }
+
+        function addSelectedSongs() {
+            if (selectedSongIds.size === 0) {
+                alert('Please select at least one song');
+                return;
+            }
+            
+            const setlist = getCurrentSetlist();
+            if (!setlist) return;
+            
+            // Add selected songs to the current set
+            const songsToAdd = Array.from(selectedSongIds);
+            setlist.setlists[currentAddToSet].push(...songsToAdd);
+            
+            saveAllSetlists();
+            renderSet(currentAddToSet);
+            
+            // Highlight newly added songs
+            setTimeout(() => {
+                const container = document.getElementById(`${currentAddToSet}-songs`);
+                if (container) {
+                    const songs = container.querySelectorAll('.song');
+                    const startIndex = songs.length - songsToAdd.length;
+                    for (let i = startIndex; i < songs.length; i++) {
+                        if (songs[i]) {
+                            highlightLocalChange(currentAddToSet, i, songs[i]);
+                        }
+                    }
+                }
+            }, 100);
+            
+            closeAddSongModal();
+        }
+
+        // Search input handler
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('songSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    renderMasterSongList(e.target.value);
+                });
+            }
+        });
 
         // Initialize
         // Wait for Firebase SDK to load before initializing
