@@ -762,6 +762,7 @@
             <div class="modal-buttons">
                 <button class="modal-btn" onclick="saveFirebaseConfig()">Save & Connect</button>
                 <button class="modal-btn" onclick="uploadMasterSongs()" style="background: rgba(34, 197, 94, 0.2);">Upload Master Songs</button>
+                <button class="modal-btn" onclick="migrateSetlists()" style="background: rgba(96, 165, 250, 0.2);">Migrate Setlists to IDs</button>
                 <button class="modal-btn cancel" onclick="closeFirebaseSetup()">Close</button>
             </div>
 
@@ -1053,6 +1054,97 @@
                     feedbackDiv.className = 'firebase-feedback error';
                     feedbackDiv.textContent = `❌ Upload failed: ${error.message}`;
                     console.error('❌ Upload error:', error);
+                });
+        }
+
+        function migrateSetlists() {
+            if (!database) {
+                alert('❌ Not connected to Firebase. Please configure and connect first.');
+                return;
+            }
+
+            const feedbackDiv = document.getElementById('firebaseFeedback');
+            feedbackDiv.className = 'firebase-feedback connecting';
+            feedbackDiv.textContent = '🔄 Migrating setlists to use song IDs...';
+
+            console.log('🔄 Starting setlist migration...');
+
+            // Get current setlists from Firebase
+            database.ref('setlists').once('value')
+                .then((snapshot) => {
+                    const currentSetlists = snapshot.val();
+                    
+                    if (!currentSetlists) {
+                        // No setlists exist - create default one
+                        const migratedSetlists = [{
+                            id: 'default',
+                            title: 'DFR with Becky',
+                            date: '24/01/2026',
+                            setlists: defaultSetlists
+                        }];
+                        
+                        return database.ref('setlists').set(migratedSetlists);
+                    }
+
+                    // Migrate existing setlists
+                    const migratedSetlists = currentSetlists.map(setlist => {
+                        const migratedSets = {};
+                        
+                        ['set1', 'set2', 'spares'].forEach(setId => {
+                            if (setlist.setlists && setlist.setlists[setId]) {
+                                migratedSets[setId] = setlist.setlists[setId].map(song => {
+                                    // If already a string ID, keep it
+                                    if (typeof song === 'string') {
+                                        return song;
+                                    }
+                                    
+                                    // If it's an object, find matching song ID
+                                    if (song && typeof song === 'object' && song.title) {
+                                        const songTitle = song.title.toLowerCase().trim();
+                                        
+                                        // Find matching song in master list
+                                        for (const [id, masterSong] of Object.entries(masterSongs)) {
+                                            if (masterSong.title.toLowerCase().trim() === songTitle) {
+                                                return id;
+                                            }
+                                        }
+                                        
+                                        console.warn('⚠️ Could not find ID for song:', song.title);
+                                        return 'unknown-song';
+                                    }
+                                    
+                                    return song;
+                                });
+                            } else {
+                                migratedSets[setId] = [];
+                            }
+                        });
+
+                        return {
+                            id: setlist.id || 'default',
+                            title: setlist.title || 'Untitled Setlist',
+                            date: setlist.date || new Date().toLocaleDateString('en-GB'),
+                            setlists: migratedSets
+                        };
+                    });
+
+                    console.log('📊 Migrated setlists:', migratedSetlists);
+                    return database.ref('setlists').set(migratedSetlists);
+                })
+                .then(() => {
+                    feedbackDiv.className = 'firebase-feedback success';
+                    feedbackDiv.textContent = '✅ Setlists migrated successfully! Refresh the app.';
+                    console.log('✅ Setlist migration complete!');
+                    
+                    // Reload after 2 seconds
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                })
+                .catch((error) => {
+                    feedbackDiv.className = 'firebase-feedback error';
+                    feedbackDiv.textContent = `❌ Migration failed: ${error.message}`;
+                    console.error('❌ Migration error:', error);
                 });
         }
 
