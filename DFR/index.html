@@ -1059,9 +1059,7 @@
         let draggedIndex = null;
         let currentSet = null;
 
-        // Long press tracking
-        let longPressTimer = null;
-        let longPressActive = false;
+        // Context menu tracking
         let contextMenuSongIndex = null;
         let contextMenuSet = null;
 
@@ -1246,7 +1244,7 @@
                     </div>
                 `;
                 
-                // Touch-based drag and long press
+                // Touch-based drag on handle
                 let touchStartY = 0;
                 let touchStartX = 0;
                 let isDragging = false;
@@ -1254,8 +1252,15 @@
                 let startIndex = index;
                 
                 const handleElement = songEl.querySelector('.drag-handle');
+                const songInfo = songEl.querySelector('.song-info');
                 
-                // Touch start on drag handle
+                // Tap on song info to show context menu
+                songInfo.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showContextMenu(setId, index, song);
+                });
+                
+                // Touch drag on handle for iOS
                 handleElement.addEventListener('touchstart', (e) => {
                     const touch = e.touches[0];
                     touchStartY = touch.clientY;
@@ -1327,31 +1332,7 @@
                     }
                 });
                 
-                // Long press for context menu (not on drag handle)
-                songEl.addEventListener('touchstart', (e) => {
-                    if (e.target.closest('.drag-handle')) return;
-                    
-                    longPressActive = false;
-                    longPressTimer = setTimeout(() => {
-                        longPressActive = true;
-                        showContextMenu(setId, index, song);
-                        navigator.vibrate && navigator.vibrate(50);
-                    }, 800);
-                });
-
-                songEl.addEventListener('touchend', (e) => {
-                    if (!e.target.closest('.drag-handle')) {
-                        clearTimeout(longPressTimer);
-                    }
-                });
-
-                songEl.addEventListener('touchmove', (e) => {
-                    if (!e.target.closest('.drag-handle')) {
-                        clearTimeout(longPressTimer);
-                    }
-                });
-
-                // Desktop drag events (kept for desktop compatibility)
+                // Desktop drag events
                 songEl.draggable = true;
                 songEl.addEventListener('dragstart', handleDragStart);
                 songEl.addEventListener('dragend', handleDragEnd);
