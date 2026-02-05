@@ -939,11 +939,11 @@
                     // Add highlight class
                     songEl.classList.add('recently-changed');
                     
-                    // Remove after 1 minute
+                    // Remove after 30 seconds
                     highlightTimeouts[key] = setTimeout(() => {
                         songEl.classList.remove('recently-changed');
                         delete highlightTimeouts[key];
-                    }, 60000); // 60 seconds
+                    }, 30000); // 30 seconds
                 }
             });
         }
@@ -1496,11 +1496,11 @@
             // Add highlight class
             songEl.classList.add('recently-changed');
             
-            // Remove after 1 minute
+            // Remove after 30 seconds
             highlightTimeouts[key] = setTimeout(() => {
                 songEl.classList.remove('recently-changed');
                 delete highlightTimeouts[key];
-            }, 60000); // 60 seconds
+            }, 30000); // 30 seconds
         }
 
         function handleDragStart(e) {
