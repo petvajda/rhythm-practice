@@ -69,6 +69,37 @@
             font-size: 24px;
             color: #ffffff;
             margin-bottom: 5px;
+            transition: opacity 0.2s ease;
+        }
+
+        .header-content h1:hover {
+            opacity: 0.8;
+        }
+
+        .header-content h1.editing {
+            display: none;
+        }
+
+        .title-edit-input {
+            display: none;
+            font-size: 24px;
+            color: #ffffff;
+            background: #2a2a2a;
+            border: 2px solid #ffffff;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-weight: bold;
+            width: 300px;
+            max-width: 100%;
+        }
+
+        .title-edit-input:focus {
+            outline: none;
+            border-color: #60a5fa;
+        }
+
+        .title-edit-input.active {
+            display: block;
         }
 
         .header-content .date {
@@ -734,7 +765,8 @@
             <div class="header-left">
                 <button class="back-btn" onclick="goHome()">←</button>
                 <div class="header-content">
-                    <h1 id="detailTitle">Setlist</h1>
+                    <h1 id="detailTitle" onclick="startEditingTitle()" style="cursor: pointer;" title="Click to edit">Setlist</h1>
+                    <input type="text" id="titleEditInput" class="title-edit-input" onblur="finishEditingTitle()" onkeydown="handleTitleKeydown(event)">
                     <div class="date" id="detailDate"></div>
                 </div>
             </div>
@@ -744,8 +776,7 @@
             <div class="setlist active" id="set1">
                 <div class="set-header">
                     Set 1
-                    <button class="reset-btn" style="margin-left: auto; margin-right: 10px;" onclick="showAddSongModal('set1')">+ Add Songs</button>
-                    <button class="reset-btn" onclick="resetSet('set1')">Reset</button>
+                    <button class="reset-btn" style="margin-left: auto;" onclick="showAddSongModal('set1')">+ Add Songs</button>
                 </div>
                 <div id="set1-songs"></div>
             </div>
@@ -753,8 +784,7 @@
             <div class="setlist" id="set2">
                 <div class="set-header">
                     Set 2
-                    <button class="reset-btn" style="margin-left: auto; margin-right: 10px;" onclick="showAddSongModal('set2')">+ Add Songs</button>
-                    <button class="reset-btn" onclick="resetSet('set2')">Reset</button>
+                    <button class="reset-btn" style="margin-left: auto;" onclick="showAddSongModal('set2')">+ Add Songs</button>
                 </div>
                 <div id="set2-songs"></div>
             </div>
@@ -762,8 +792,7 @@
             <div class="setlist" id="spares">
                 <div class="set-header">
                     Spares
-                    <button class="reset-btn" style="margin-left: auto; margin-right: 10px;" onclick="showAddSongModal('spares')">+ Add Songs</button>
-                    <button class="reset-btn" onclick="resetSet('spares')">Reset</button>
+                    <button class="reset-btn" style="margin-left: auto;" onclick="showAddSongModal('spares')">+ Add Songs</button>
                 </div>
                 <div id="spares-songs"></div>
             </div>
@@ -1769,19 +1798,59 @@
             }
         }
 
-        function resetSet(setId) {
-            if (!confirm(`Reset ${setId.toUpperCase()}? This will clear all songs in this set.`)) {
-                return;
+        // Title editing functions
+        function startEditingTitle() {
+            const titleEl = document.getElementById('detailTitle');
+            const inputEl = document.getElementById('titleEditInput');
+            
+            // Set input value to current title
+            inputEl.value = titleEl.textContent;
+            
+            // Hide title, show input
+            titleEl.classList.add('editing');
+            inputEl.classList.add('active');
+            
+            // Focus and select all text
+            inputEl.focus();
+            inputEl.select();
+        }
+
+        function finishEditingTitle() {
+            const titleEl = document.getElementById('detailTitle');
+            const inputEl = document.getElementById('titleEditInput');
+            
+            const newTitle = inputEl.value.trim();
+            
+            // Only update if title changed and is not empty
+            if (newTitle && newTitle !== titleEl.textContent) {
+                const setlist = getCurrentSetlist();
+                if (setlist) {
+                    setlist.title = newTitle;
+                    titleEl.textContent = newTitle;
+                    saveAllSetlists();
+                    
+                    // Update home screen if it's visible in background
+                    renderSetlistsList();
+                }
             }
             
-            const setlist = getCurrentSetlist();
-            if (!setlist) return;
-            
-            // Clear the set
-            setlist.setlists[setId] = [];
-            
-            saveAllSetlists();
-            renderSet(setId);
+            // Hide input, show title
+            inputEl.classList.remove('active');
+            titleEl.classList.remove('editing');
+        }
+
+        function handleTitleKeydown(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                finishEditingTitle();
+            } else if (event.key === 'Escape') {
+                // Cancel editing
+                const inputEl = document.getElementById('titleEditInput');
+                const titleEl = document.getElementById('detailTitle');
+                
+                inputEl.classList.remove('active');
+                titleEl.classList.remove('editing');
+            }
         }
 
         // Add Song Modal Functions
