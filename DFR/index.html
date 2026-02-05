@@ -1446,10 +1446,17 @@
             const setlist = getCurrentSetlist();
             
             const newOrder = [];
-            songs.forEach((songEl) => {
-                const index = parseInt(songEl.dataset.index);
+            const movedIndices = [];
+            
+            songs.forEach((songEl, newIndex) => {
+                const oldIndex = parseInt(songEl.dataset.originalIndex || songEl.dataset.index);
                 const title = songEl.querySelector('.song-title').textContent;
                 const note = songEl.querySelector('.song-note')?.textContent || '';
+                
+                // Track which items moved
+                if (oldIndex !== newIndex) {
+                    movedIndices.push(newIndex);
+                }
                 
                 // Find original song text
                 const originalSong = setlist.setlists[setId].find(s => {
@@ -1464,6 +1471,36 @@
             
             setlist.setlists[setId] = newOrder;
             saveAllSetlists();
+            
+            // Highlight the moved items locally
+            if (movedIndices.length > 0) {
+                setTimeout(() => {
+                    movedIndices.forEach(index => {
+                        const songEl = songs[index];
+                        if (songEl) {
+                            highlightLocalChange(setId, index, songEl);
+                        }
+                    });
+                }, 100);
+            }
+        }
+
+        function highlightLocalChange(setId, index, songEl) {
+            const key = `${setId}-${index}`;
+            
+            // Clear any existing timeout for this song
+            if (highlightTimeouts[key]) {
+                clearTimeout(highlightTimeouts[key]);
+            }
+            
+            // Add highlight class
+            songEl.classList.add('recently-changed');
+            
+            // Remove after 1 minute
+            highlightTimeouts[key] = setTimeout(() => {
+                songEl.classList.remove('recently-changed');
+                delete highlightTimeouts[key];
+            }, 60000); // 60 seconds
         }
 
         function handleDragStart(e) {
@@ -1556,10 +1593,24 @@
             
             // Add to target
             setlist.setlists[targetSet].push(song);
+            const newIndex = setlist.setlists[targetSet].length - 1;
             
             saveAllSetlists();
             renderSet(contextMenuSet);
             renderSet(targetSet);
+            
+            // Highlight the moved song in target set
+            setTimeout(() => {
+                const container = document.getElementById(`${targetSet}-songs`);
+                if (container) {
+                    const songs = container.querySelectorAll('.song');
+                    const songEl = songs[newIndex];
+                    if (songEl) {
+                        highlightLocalChange(targetSet, newIndex, songEl);
+                    }
+                }
+            }, 100);
+            
             closeContextMenu();
         }
 
