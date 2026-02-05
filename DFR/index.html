@@ -616,6 +616,22 @@
             from { transform: translateX(100px); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+
+        .song.recently-changed {
+            animation: highlightPulse 2s ease-in-out 3;
+            border: 2px solid #60a5fa;
+        }
+
+        @keyframes highlightPulse {
+            0%, 100% { 
+                background: #2a2a2a;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            }
+            50% { 
+                background: #1e3a5f;
+                box-shadow: 0 0 20px rgba(96, 165, 250, 0.5);
+            }
+        }
     </style>
 </head>
 <body>
@@ -780,6 +796,8 @@
         let isFirebaseConnected = false;
         let isSyncing = false;
         let syncTimeout = null;
+        let lastKnownSetlists = null;
+        let highlightTimeouts = {};
 
         // Initialize Firebase from saved config
         function initFirebase() {
@@ -840,6 +858,9 @@
             database.ref('setlists').on('value', (snapshot) => {
                 const firebaseData = snapshot.val();
                 if (firebaseData && !isSyncing) {
+                    // Detect what changed
+                    const changedSets = detectChanges(allSetlists, firebaseData);
+                    
                     // Update local data from Firebase
                     allSetlists = firebaseData;
                     localStorage.setItem('dfrAllSetlists', JSON.stringify(allSetlists));
@@ -854,9 +875,75 @@
                         renderSet('set1');
                         renderSet('set2');
                         renderSet('spares');
+                        
+                        // Highlight changed items
+                        if (changedSets.length > 0) {
+                            highlightChangedItems(changedSets);
+                        }
                     }
                     
                     showSyncIndicator();
+                }
+            });
+        }
+
+        function detectChanges(oldData, newData) {
+            if (!oldData || !currentSetlistId) return [];
+            
+            const changes = [];
+            const oldSetlist = oldData.find(s => s.id === currentSetlistId);
+            const newSetlist = newData.find(s => s.id === currentSetlistId);
+            
+            if (!oldSetlist || !newSetlist) return [];
+            
+            // Check each set for changes
+            ['set1', 'set2', 'spares'].forEach(setId => {
+                const oldSongs = oldSetlist.setlists[setId] || [];
+                const newSongs = newSetlist.setlists[setId] || [];
+                
+                // Check if order changed or songs added/removed
+                const orderChanged = JSON.stringify(oldSongs) !== JSON.stringify(newSongs);
+                
+                if (orderChanged) {
+                    // Find which songs moved
+                    newSongs.forEach((song, newIndex) => {
+                        const oldIndex = oldSongs.indexOf(song);
+                        if (oldIndex !== -1 && oldIndex !== newIndex) {
+                            changes.push({ setId, index: newIndex, song });
+                        } else if (oldIndex === -1) {
+                            // New song added
+                            changes.push({ setId, index: newIndex, song });
+                        }
+                    });
+                }
+            });
+            
+            return changes;
+        }
+
+        function highlightChangedItems(changes) {
+            changes.forEach(change => {
+                const container = document.getElementById(`${change.setId}-songs`);
+                if (!container) return;
+                
+                const songs = container.querySelectorAll('.song');
+                const songEl = songs[change.index];
+                
+                if (songEl) {
+                    // Clear any existing timeout for this song
+                    const key = `${change.setId}-${change.index}`;
+                    if (highlightTimeouts[key]) {
+                        clearTimeout(highlightTimeouts[key]);
+                    }
+                    
+                    // Add highlight class
+                    songEl.classList.add('recently-changed');
+                    
+                    // Remove after 1 minute
+                    highlightTimeouts[key] = setTimeout(() => {
+                        songEl.classList.remove('recently-changed');
+                        delete highlightTimeouts[key];
+                    }, 60000); // 60 seconds
                 }
             });
         }
