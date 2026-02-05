@@ -275,6 +275,16 @@
             border-color: #ffffff;
         }
 
+        .master-song-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed !important;
+            background: #1a1a1a;
+        }
+
+        .master-song-item.disabled:active {
+            transform: none;
+        }
+
         .master-song-title {
             color: #ffffff;
             font-size: 16px;
@@ -1802,11 +1812,20 @@
                 return;
             }
             
-            // Get currently used songs in this setlist
-            const usedSongs = new Set();
-            if (setlist && setlist.setlists) {
-                Object.values(setlist.setlists).forEach(songs => {
-                    songs.forEach(songId => usedSongs.add(songId));
+            // Get songs in the current set being edited
+            const songsInCurrentSet = new Set();
+            if (setlist && setlist.setlists && currentAddToSet) {
+                const currentSetSongs = setlist.setlists[currentAddToSet] || [];
+                currentSetSongs.forEach(songId => songsInCurrentSet.add(songId));
+            }
+            
+            // Get currently used songs in other sets
+            const songsInOtherSets = new Set();
+            if (setlist && setlist.setlists && currentAddToSet) {
+                Object.entries(setlist.setlists).forEach(([setId, songs]) => {
+                    if (setId !== currentAddToSet) {
+                        songs.forEach(songId => songsInOtherSets.add(songId));
+                    }
                 });
             }
             
@@ -1828,15 +1847,22 @@
             }
             
             listEl.innerHTML = songs.map(([id, song]) => {
-                const isUsed = usedSongs.has(id);
+                const isInCurrentSet = songsInCurrentSet.has(id);
+                const isInOtherSet = songsInOtherSets.has(id);
                 const isSelected = selectedSongIds.has(id);
+                
+                // Don't allow selecting songs already in current set
+                const isDisabled = isInCurrentSet;
+                
                 return `
-                    <div class="master-song-item ${isSelected ? 'selected' : ''}" 
-                         onclick="toggleSongSelection('${id}')"
-                         data-song-id="${id}">
+                    <div class="master-song-item ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}" 
+                         onclick="${isDisabled ? '' : `toggleSongSelection('${id}')`}"
+                         data-song-id="${id}"
+                         style="${isInCurrentSet ? 'opacity: 0.5; cursor: not-allowed; background: #1a1a1a;' : ''}">
                         <div class="master-song-title">
                             ${song.title}
-                            ${isUsed ? '<span style="color: #9ca3af; font-size: 12px; margin-left: 8px;">(Already in setlist)</span>' : ''}
+                            ${isInCurrentSet ? '<span style="color: #10b981; font-size: 12px; margin-left: 8px;">✓ Already in this set</span>' : ''}
+                            ${!isInCurrentSet && isInOtherSet ? '<span style="color: #9ca3af; font-size: 12px; margin-left: 8px;">(In other set)</span>' : ''}
                         </div>
                         <div class="master-song-author">${song.author}${song.key ? ` • Key: ${song.key}` : ''}</div>
                     </div>
