@@ -1235,7 +1235,6 @@
                 
                 const songEl = document.createElement('div');
                 songEl.className = 'song';
-                songEl.draggable = true;
                 songEl.dataset.index = index;
                 songEl.dataset.set = setId;
                 
@@ -1247,8 +1246,91 @@
                     </div>
                 `;
                 
-                // Long press handlers
+                // Touch-based drag and long press
+                let touchStartY = 0;
+                let touchStartX = 0;
+                let isDragging = false;
+                let draggedClone = null;
+                let startIndex = index;
+                
+                const handleElement = songEl.querySelector('.drag-handle');
+                
+                // Touch start on drag handle
+                handleElement.addEventListener('touchstart', (e) => {
+                    const touch = e.touches[0];
+                    touchStartY = touch.clientY;
+                    touchStartX = touch.clientX;
+                    isDragging = true;
+                    startIndex = parseInt(songEl.dataset.index);
+                    
+                    // Create visual clone
+                    draggedClone = songEl.cloneNode(true);
+                    draggedClone.style.position = 'fixed';
+                    draggedClone.style.left = '20px';
+                    draggedClone.style.right = '20px';
+                    draggedClone.style.top = touch.clientY - 32 + 'px';
+                    draggedClone.style.opacity = '0.8';
+                    draggedClone.style.zIndex = '1000';
+                    draggedClone.style.pointerEvents = 'none';
+                    document.body.appendChild(draggedClone);
+                    
+                    songEl.style.opacity = '0.3';
+                }, { passive: false });
+                
+                handleElement.addEventListener('touchmove', (e) => {
+                    if (!isDragging) return;
+                    e.preventDefault();
+                    
+                    const touch = e.touches[0];
+                    
+                    // Move clone
+                    if (draggedClone) {
+                        draggedClone.style.top = touch.clientY - 32 + 'px';
+                    }
+                    
+                    // Find element at touch position
+                    const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY);
+                    const targetSong = elementAtPoint ? elementAtPoint.closest('.song') : null;
+                    
+                    if (targetSong && targetSong !== songEl && targetSong.dataset.set === setId) {
+                        const targetIndex = parseInt(targetSong.dataset.index);
+                        const currentIndex = parseInt(songEl.dataset.index);
+                        
+                        // Reorder in DOM
+                        if (targetIndex < currentIndex) {
+                            targetSong.parentNode.insertBefore(songEl, targetSong);
+                        } else {
+                            targetSong.parentNode.insertBefore(songEl, targetSong.nextSibling);
+                        }
+                        
+                        // Update indices
+                        updateSongIndices(setId);
+                    }
+                }, { passive: false });
+                
+                handleElement.addEventListener('touchend', (e) => {
+                    if (!isDragging) return;
+                    
+                    isDragging = false;
+                    songEl.style.opacity = '1';
+                    
+                    // Remove clone
+                    if (draggedClone) {
+                        draggedClone.remove();
+                        draggedClone = null;
+                    }
+                    
+                    // Save new order
+                    const finalIndex = parseInt(songEl.dataset.index);
+                    if (startIndex !== finalIndex) {
+                        saveReorderedSet(setId);
+                    }
+                });
+                
+                // Long press for context menu (not on drag handle)
                 songEl.addEventListener('touchstart', (e) => {
+                    if (e.target.closest('.drag-handle')) return;
+                    
                     longPressActive = false;
                     longPressTimer = setTimeout(() => {
                         longPressActive = true;
@@ -1258,32 +1340,19 @@
                 });
 
                 songEl.addEventListener('touchend', (e) => {
-                    clearTimeout(longPressTimer);
+                    if (!e.target.closest('.drag-handle')) {
+                        clearTimeout(longPressTimer);
+                    }
                 });
 
                 songEl.addEventListener('touchmove', (e) => {
-                    clearTimeout(longPressTimer);
+                    if (!e.target.closest('.drag-handle')) {
+                        clearTimeout(longPressTimer);
+                    }
                 });
 
-                // Mouse long press for desktop
-                songEl.addEventListener('mousedown', (e) => {
-                    if (e.target.closest('.drag-handle')) return;
-                    longPressActive = false;
-                    longPressTimer = setTimeout(() => {
-                        longPressActive = true;
-                        showContextMenu(setId, index, song);
-                    }, 800);
-                });
-
-                songEl.addEventListener('mouseup', (e) => {
-                    clearTimeout(longPressTimer);
-                });
-
-                songEl.addEventListener('mouseleave', (e) => {
-                    clearTimeout(longPressTimer);
-                });
-
-                // Drag events
+                // Desktop drag events (kept for desktop compatibility)
+                songEl.draggable = true;
                 songEl.addEventListener('dragstart', handleDragStart);
                 songEl.addEventListener('dragend', handleDragEnd);
                 songEl.addEventListener('dragover', handleDragOver);
@@ -1293,6 +1362,40 @@
                 
                 container.appendChild(songEl);
             });
+        }
+        
+        function updateSongIndices(setId) {
+            const container = document.getElementById(`${setId}-songs`);
+            const songs = container.querySelectorAll('.song');
+            songs.forEach((song, index) => {
+                song.dataset.index = index;
+            });
+        }
+        
+        function saveReorderedSet(setId) {
+            const container = document.getElementById(`${setId}-songs`);
+            const songs = container.querySelectorAll('.song');
+            const setlist = getCurrentSetlist();
+            
+            const newOrder = [];
+            songs.forEach((songEl) => {
+                const index = parseInt(songEl.dataset.index);
+                const title = songEl.querySelector('.song-title').textContent;
+                const note = songEl.querySelector('.song-note')?.textContent || '';
+                
+                // Find original song text
+                const originalSong = setlist.setlists[setId].find(s => {
+                    const parsed = parseSongTitle(s);
+                    return parsed.title === title;
+                });
+                
+                if (originalSong) {
+                    newOrder.push(originalSong);
+                }
+            });
+            
+            setlist.setlists[setId] = newOrder;
+            saveAllSetlists();
         }
 
         function handleDragStart(e) {
