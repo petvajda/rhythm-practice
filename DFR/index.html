@@ -1,1 +1,1452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DFR Setlist">
+    <title>DFR Setlist</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23e11d48'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='Arial Black'>D</text></svg>">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000000;
+            min-height: 100vh;
+            padding-bottom: 0;
+            overflow-x: hidden;
+        }
+
+        #homeScreen {
+            background: #000000;
+            min-height: 100vh;
+        }
+
+        #detailScreen {
+            background: #000000;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        .header {
+            background: #1a1a1a;
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .header-content h1 {
+            font-size: 24px;
+            color: #ffffff;
+            margin-bottom: 5px;
+        }
+
+        .header-content .date {
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        .tabs {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1a1a1a;
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            color: #9ca3af;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: #ffffff;
+            border-top: 3px solid #ffffff;
+        }
+
+        .content {
+            padding: 20px;
+            background: #000000;
+            min-height: calc(100vh - 80px);
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Home Screen Styles */
+        .home-header {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 25px;
+        }
+
+        .new-setlist-btn {
+            background: #2a2a2a;
+            color: white;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 30px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .new-setlist-btn:active {
+            background: #3a3a3a;
+            transform: scale(0.98);
+        }
+
+        .setlist-card {
+            background: #2a2a2a;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .setlist-card:active {
+            transform: scale(0.98);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+
+        .setlist-card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        .setlist-card-date {
+            font-size: 14px;
+            color: #9ca3af;
+            margin-bottom: 10px;
+        }
+
+        .setlist-card-info {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            border-radius: 16px;
+            padding: 25px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .modal-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .modal-input {
+            background: #2a2a2a;
+            border: 2px solid #3a3a3a;
+            border-radius: 8px;
+            padding: 12px;
+            color: white;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: #ffffff;
+        }
+
+        .modal-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-btn {
+            background: #2a2a2a;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-btn:active {
+            background: #3a3a3a;
+            transform: scale(0.98);
+        }
+
+        .modal-btn.cancel {
+            background: transparent;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Setlist View Styles */
+        .setlist {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .setlist.active {
+            display: block;
+        }
+
+        .song {
+            background: #2a2a2a;
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            touch-action: none;
+            user-select: none;
+        }
+
+        .song:active {
+            transform: scale(0.98);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+
+        .song.dragging {
+            opacity: 0.5;
+            transform: scale(1.05);
+            z-index: 1000;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        }
+
+        .song.drag-over {
+            border-top: 3px solid #ffffff;
+        }
+
+        .drag-handle {
+            color: #6b7280;
+            font-size: 20px;
+            cursor: grab;
+            padding: 5px;
+            flex-shrink: 0;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .song-number {
+            display: none;
+        }
+
+        .song-info {
+            flex: 1;
+        }
+
+        .song-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 2px;
+        }
+
+        .song-note {
+            font-size: 12px;
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        .checkmark {
+            display: none;
+        }
+
+        .set-header {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .reset-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 15px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+        }
+
+        .reset-btn:active {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(0.98);
+        }
+
+        /* Context Menu Styles */
+        .context-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 300;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .context-menu.active {
+            display: flex;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .context-menu-content {
+            background: #1a1a1a;
+            border-radius: 16px 16px 0 0;
+            padding: 0;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .context-menu-song {
+            padding: 20px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .context-menu-song-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .context-menu-song-note {
+            font-size: 13px;
+            color: #9ca3af;
+        }
+
+        .context-menu-actions {
+            padding: 8px;
+        }
+
+        .context-menu-btn {
+            background: transparent;
+            color: white;
+            border: none;
+            padding: 18px;
+            width: 100%;
+            text-align: left;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 8px;
+        }
+
+        .context-menu-btn:active {
+            background: #2a2a2a;
+        }
+
+        .context-menu-btn.delete {
+            color: #ef4444;
+        }
+
+        .context-menu-cancel {
+            background: #2a2a2a;
+            color: white;
+            border: none;
+            padding: 18px;
+            width: 100%;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            border-radius: 12px;
+        }
+
+        .context-menu-cancel:active {
+            background: #3a3a3a;
+        }
+
+        /* Firebase Setup Modal */
+        .firebase-setup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 400;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .firebase-setup.active {
+            display: flex;
+        }
+
+        .firebase-setup-content {
+            background: #1a1a1a;
+            border-radius: 16px;
+            padding: 25px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .firebase-setup-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .firebase-setup-text {
+            color: #9ca3af;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .firebase-setup-text a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+
+        .firebase-status {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .firebase-status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #6b7280;
+        }
+
+        .status-dot.connected {
+            background: #22c55e;
+        }
+
+        .status-dot.disconnected {
+            background: #ef4444;
+        }
+
+        .firebase-status-text {
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        .firebase-info {
+            background: #2a2a2a;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #9ca3af;
+            word-break: break-all;
+        }
+
+        .firebase-feedback {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .firebase-feedback.success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid #22c55e;
+            color: #22c55e;
+            display: block;
+        }
+
+        .firebase-feedback.error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            display: block;
+        }
+
+        .firebase-feedback.connecting {
+            background: rgba(96, 165, 250, 0.2);
+            border: 1px solid #60a5fa;
+            color: #60a5fa;
+            display: block;
+        }
+
+        .sync-indicator {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: rgba(34, 197, 94, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: none;
+            z-index: 90;
+            animation: slideIn 0.3s ease;
+        }
+
+        .sync-indicator.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Home Screen -->
+    <div class="screen active" id="homeScreen">
+        <div class="header">
+            <div class="header-content">
+                <h1>DFR Setlists</h1>
+            </div>
+            <button class="back-btn" onclick="showFirebaseSetup()" style="font-size: 20px;">⚙️</button>
+        </div>
+        <div class="content">
+            <button class="new-setlist-btn" onclick="showNewSetlistModal()">
+                <span style="font-size: 24px;">+</span> New Setlist
+            </button>
+            <div id="setlistsList"></div>
+        </div>
+    </div>
+
+    <!-- Setlist Detail Screen -->
+    <div class="screen" id="detailScreen">
+        <div class="header">
+            <div class="header-left">
+                <button class="back-btn" onclick="goHome()">←</button>
+                <div class="header-content">
+                    <h1 id="detailTitle">Setlist</h1>
+                    <div class="date" id="detailDate"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="setlist active" id="set1">
+                <div class="set-header">Set 1</div>
+                <button class="reset-btn" onclick="resetSet('set1')">Reset</button>
+                <div id="set1-songs"></div>
+            </div>
+
+            <div class="setlist" id="set2">
+                <div class="set-header">Set 2</div>
+                <button class="reset-btn" onclick="resetSet('set2')">Reset</button>
+                <div id="set2-songs"></div>
+            </div>
+
+            <div class="setlist" id="spares">
+                <div class="set-header">Spares</div>
+                <button class="reset-btn" onclick="resetSet('spares')">Reset</button>
+                <div id="spares-songs"></div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('set1')">Set 1</button>
+            <button class="tab" onclick="switchTab('set2')">Set 2</button>
+            <button class="tab" onclick="switchTab('spares')">Spares</button>
+        </div>
+    </div>
+
+    <!-- New Setlist Modal -->
+    <div class="modal" id="newSetlistModal">
+        <div class="modal-content">
+            <div class="modal-title">New Setlist</div>
+            <input type="text" class="modal-input" id="setlistTitle" placeholder="Setlist title (e.g., DFR with Becky)">
+            <input type="date" class="modal-input" id="setlistDate">
+            <div class="modal-buttons">
+                <button class="modal-btn" onclick="createEmptySetlist()">Create Empty</button>
+                <button class="modal-btn" onclick="showCopyOptions()">Copy from Existing</button>
+                <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Copy Setlist Modal -->
+    <div class="modal" id="copySetlistModal">
+        <div class="modal-content">
+            <div class="modal-title">Copy from Existing</div>
+            <div id="copySetlistsList"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="backToNewSetlist()">Back</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Menu for Song Actions -->
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-content">
+            <div class="context-menu-song">
+                <div class="context-menu-song-title" id="contextSongTitle"></div>
+                <div class="context-menu-song-note" id="contextSongNote"></div>
+            </div>
+            <div class="context-menu-actions">
+                <button class="context-menu-btn" id="moveToSet1Btn" onclick="moveToSet('set1')">Move to Set 1</button>
+                <button class="context-menu-btn" id="moveToSet2Btn" onclick="moveToSet('set2')">Move to Set 2</button>
+                <button class="context-menu-btn" id="moveToSparesBtn" onclick="moveToSet('spares')">Move to Spares</button>
+                <button class="context-menu-btn delete" onclick="deleteSong()">Delete</button>
+            </div>
+            <button class="context-menu-cancel" onclick="closeContextMenu()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Firebase Setup Modal -->
+    <div class="firebase-setup" id="firebaseSetup">
+        <div class="firebase-setup-content">
+            <div class="firebase-setup-title">🔥 Firebase Setup</div>
+            <div class="firebase-setup-text">
+                To enable real-time sync across all band members, you need to configure Firebase.
+            </div>
+            
+            <div class="firebase-status">
+                <div class="firebase-status-indicator">
+                    <div class="status-dot" id="statusDot"></div>
+                    <div class="firebase-status-text" id="statusText">Not configured</div>
+                </div>
+            </div>
+
+            <div class="firebase-setup-text" style="font-weight: 600; color: white; margin-top: 20px;">
+                Quick Setup Guide:
+            </div>
+            <div class="firebase-setup-text">
+                1. Go to <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a><br>
+                2. Create a new project (or use existing)<br>
+                3. Go to Project Settings → General<br>
+                4. Scroll to "Your apps" → Web app<br>
+                5. Copy your Firebase config<br>
+                6. Paste it below:
+            </div>
+
+            <textarea class="modal-input" id="firebaseConfig" placeholder='Paste Firebase config here:
+{
+  "apiKey": "...",
+  "authDomain": "...",
+  "databaseURL": "...",
+  "projectId": "...",
+  "storageBucket": "...",
+  "messagingSenderId": "...",
+  "appId": "..."
+}' style="height: 200px; font-family: monospace; font-size: 12px;"></textarea>
+
+            <div class="modal-buttons">
+                <button class="modal-btn" onclick="saveFirebaseConfig()">Save & Connect</button>
+                <button class="modal-btn" onclick="testWithDemo()" style="background: rgba(96, 165, 250, 0.2);">Try Demo Mode (Local Only)</button>
+                <button class="modal-btn cancel" onclick="closeFirebaseSetup()">Close</button>
+            </div>
+
+            <div id="firebaseFeedback" class="firebase-feedback"></div>
+        </div>
+    </div>
+
+    <!-- Sync Indicator -->
+    <div class="sync-indicator" id="syncIndicator">
+        ⚡ Synced
+    </div>
+
+    <!-- Firebase SDK - Load before our script -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <script>
+        // Firebase variables
+        let firebaseApp = null;
+        let database = null;
+        let isFirebaseConnected = false;
+        let isSyncing = false;
+        let syncTimeout = null;
+
+        // Initialize Firebase from saved config
+        function initFirebase() {
+            const savedConfig = localStorage.getItem('firebaseConfig');
+            if (savedConfig) {
+                try {
+                    const config = JSON.parse(savedConfig);
+                    firebaseApp = firebase.initializeApp(config);
+                    database = firebase.database();
+                    
+                    // Listen for connection state
+                    const connectedRef = database.ref('.info/connected');
+                    connectedRef.on('value', (snap) => {
+                        if (snap.val() === true) {
+                            isFirebaseConnected = true;
+                            updateFirebaseStatus('connected', '✅ Connected - Live Sync Active');
+                            setupFirebaseListeners();
+                            console.log('✅ Firebase connected successfully');
+                        } else {
+                            isFirebaseConnected = false;
+                            updateFirebaseStatus('disconnected', '⚠️ Disconnected - Using Local Storage');
+                            console.log('⚠️ Firebase disconnected');
+                        }
+                    });
+                    
+                    return true;
+                } catch (error) {
+                    console.error('❌ Firebase init error:', error);
+                    updateFirebaseStatus('disconnected', '❌ Configuration Error');
+                    
+                    // Show error to user if on settings screen
+                    const feedbackDiv = document.getElementById('firebaseFeedback');
+                    if (feedbackDiv && document.getElementById('firebaseSetup').classList.contains('active')) {
+                        feedbackDiv.className = 'firebase-feedback error';
+                        feedbackDiv.textContent = `❌ Firebase error: ${error.message}`;
+                    }
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        function updateFirebaseStatus(status, text) {
+            const dot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            if (dot) {
+                dot.className = 'status-dot ' + status;
+            }
+            if (statusText) {
+                statusText.textContent = text;
+            }
+        }
+
+        function setupFirebaseListeners() {
+            if (!database) return;
+            
+            // Listen for setlist changes
+            database.ref('setlists').on('value', (snapshot) => {
+                const firebaseData = snapshot.val();
+                if (firebaseData && !isSyncing) {
+                    // Update local data from Firebase
+                    allSetlists = firebaseData;
+                    localStorage.setItem('dfrAllSetlists', JSON.stringify(allSetlists));
+                    
+                    // Refresh UI if on home screen
+                    if (document.getElementById('homeScreen').classList.contains('active')) {
+                        renderSetlistsList();
+                    }
+                    
+                    // Refresh current setlist if viewing one
+                    if (currentSetlistId && document.getElementById('detailScreen').classList.contains('active')) {
+                        renderSet('set1');
+                        renderSet('set2');
+                        renderSet('spares');
+                    }
+                    
+                    showSyncIndicator();
+                }
+            });
+        }
+
+        function syncToFirebase() {
+            if (!database || !isFirebaseConnected) {
+                // Fallback to local storage
+                localStorage.setItem('dfrAllSetlists', JSON.stringify(allSetlists));
+                return;
+            }
+            
+            isSyncing = true;
+            database.ref('setlists').set(allSetlists)
+                .then(() => {
+                    showSyncIndicator();
+                    isSyncing = false;
+                })
+                .catch((error) => {
+                    console.error('Sync error:', error);
+                    localStorage.setItem('dfrAllSetlists', JSON.stringify(allSetlists));
+                    isSyncing = false;
+                });
+        }
+
+        function showSyncIndicator() {
+            const indicator = document.getElementById('syncIndicator');
+            indicator.classList.add('active');
+            clearTimeout(syncTimeout);
+            syncTimeout = setTimeout(() => {
+                indicator.classList.remove('active');
+            }, 2000);
+        }
+
+        function showFirebaseSetup() {
+            document.getElementById('firebaseSetup').classList.add('active');
+            
+            const feedbackDiv = document.getElementById('firebaseFeedback');
+            feedbackDiv.className = 'firebase-feedback';
+            feedbackDiv.textContent = '';
+            
+            // Show current config if exists
+            const savedConfig = localStorage.getItem('firebaseConfig');
+            if (savedConfig) {
+                document.getElementById('firebaseConfig').value = savedConfig;
+                
+                // Show current connection status
+                if (isFirebaseConnected) {
+                    feedbackDiv.className = 'firebase-feedback success';
+                    feedbackDiv.textContent = '✅ Currently connected and syncing';
+                } else {
+                    feedbackDiv.className = 'firebase-feedback error';
+                    feedbackDiv.textContent = '⚠️ Config saved but not connected. Check your internet or update config.';
+                }
+            }
+        }
+
+        function closeFirebaseSetup() {
+            document.getElementById('firebaseSetup').classList.remove('active');
+        }
+
+        function saveFirebaseConfig() {
+            const configText = document.getElementById('firebaseConfig').value.trim();
+            const feedbackDiv = document.getElementById('firebaseFeedback');
+            
+            // Clear previous feedback
+            feedbackDiv.className = 'firebase-feedback';
+            feedbackDiv.textContent = '';
+            
+            // Check if Firebase is loaded
+            if (typeof firebase === 'undefined') {
+                feedbackDiv.className = 'firebase-feedback error';
+                feedbackDiv.textContent = '❌ Firebase SDK not loaded. Please refresh the page and try again.';
+                return;
+            }
+            
+            if (!configText) {
+                feedbackDiv.className = 'firebase-feedback error';
+                feedbackDiv.textContent = '❌ Please paste your Firebase config';
+                return;
+            }
+            
+            try {
+                const config = JSON.parse(configText);
+                
+                // Validate required fields
+                const requiredFields = ['apiKey', 'databaseURL', 'projectId'];
+                const missingFields = requiredFields.filter(field => !config[field]);
+                
+                if (missingFields.length > 0) {
+                    feedbackDiv.className = 'firebase-feedback error';
+                    feedbackDiv.textContent = `❌ Missing required fields: ${missingFields.join(', ')}`;
+                    return;
+                }
+                
+                // Show connecting status
+                feedbackDiv.className = 'firebase-feedback connecting';
+                feedbackDiv.textContent = '🔄 Connecting to Firebase...';
+                
+                // Save config
+                localStorage.setItem('firebaseConfig', JSON.stringify(config));
+                
+                // Try to connect
+                setTimeout(() => {
+                    try {
+                        if (firebaseApp) {
+                            firebaseApp.delete();
+                        }
+                        
+                        firebaseApp = firebase.initializeApp(config);
+                        database = firebase.database();
+                        
+                        // Test connection
+                        const connectedRef = database.ref('.info/connected');
+                        connectedRef.once('value', (snap) => {
+                            if (snap.val() === true) {
+                                feedbackDiv.className = 'firebase-feedback success';
+                                feedbackDiv.textContent = '✅ Successfully connected! Reloading app...';
+                                
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 2000);
+                            } else {
+                                feedbackDiv.className = 'firebase-feedback error';
+                                feedbackDiv.textContent = '❌ Connection failed. Check your config and internet connection.';
+                            }
+                        }, (error) => {
+                            feedbackDiv.className = 'firebase-feedback error';
+                            feedbackDiv.textContent = `❌ Connection error: ${error.message}`;
+                        });
+                        
+                    } catch (error) {
+                        feedbackDiv.className = 'firebase-feedback error';
+                        feedbackDiv.textContent = `❌ Configuration error: ${error.message}`;
+                    }
+                }, 500);
+                
+            } catch (error) {
+                feedbackDiv.className = 'firebase-feedback error';
+                feedbackDiv.textContent = '❌ Invalid JSON format. Make sure property names are in "quotes".';
+            }
+        }
+
+        function testWithDemo() {
+            alert('Demo mode: Changes will only save locally on this device. To sync with band members, configure Firebase.');
+            closeFirebaseSetup();
+        }
+
+        const defaultSetlists = {
+            set1: [
+                'Treasure',
+                'Murder On The Dancefloor',
+                'Valerie',
+                'Pink Pony Club',
+                'Love foolosophy',
+                'We Are Family',
+                "Ain't Nobody",
+                'Aint No Mountain (record key) (Both)',
+                'I wish / Superstition – E',
+                'This Love',
+                'Love shack (Both)',
+                'Funky music',
+                "Can't Fight The Moonlight",
+                'Teenage Dirtbag (Both)',
+                'Simply The Best'
+            ],
+            set2: [
+                'Signed, Sealed Delivered',
+                "Don't Start Now",
+                'Sing It Back',
+                'Cosmic Girl',
+                'Forget You',
+                "She's so lovely (J)",
+                'Hot Stuff',
+                'Get Lucky (Both)',
+                'Free From Desire',
+                'Gimme, Gimme, Gimme',
+                'Man, I Feel Like A Woman',
+                'Proud Mary',
+                'Mr Brightside (J)',
+                'Chelsea Dagger',
+                'I Will Survive – G'
+            ],
+            spares: [
+                'Shut Up And Dance (Both)',
+                'Sex on fire (Both)',
+                'Summer of 69'
+            ]
+        };
+
+        let allSetlists = JSON.parse(localStorage.getItem('dfrAllSetlists')) || [{
+            id: 'default',
+            title: 'DFR with Becky',
+            date: '24/01/2026',
+            setlists: JSON.parse(JSON.stringify(defaultSetlists)),
+            playedSongs: { set1: [], set2: [], spares: [] }
+        }];
+
+        let currentSetlistId = null;
+        let draggedElement = null;
+        let draggedIndex = null;
+        let currentSet = null;
+
+        // Long press tracking
+        let longPressTimer = null;
+        let longPressActive = false;
+        let contextMenuSongIndex = null;
+        let contextMenuSet = null;
+
+        function saveAllSetlists() {
+            syncToFirebase();
+        }
+
+        function getCurrentSetlist() {
+            return allSetlists.find(s => s.id === currentSetlistId);
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function goHome() {
+            showScreen('homeScreen');
+            renderSetlistsList();
+        }
+
+        function renderSetlistsList() {
+            const container = document.getElementById('setlistsList');
+            container.innerHTML = '';
+            
+            allSetlists.forEach(setlist => {
+                const card = document.createElement('div');
+                card.className = 'setlist-card';
+                card.onclick = () => openSetlist(setlist.id);
+                
+                const totalSongs = setlist.setlists.set1.length + setlist.setlists.set2.length + setlist.setlists.spares.length;
+                
+                card.innerHTML = `
+                    <div class="setlist-card-title">${setlist.title}</div>
+                    <div class="setlist-card-date">${setlist.date}</div>
+                    <div class="setlist-card-info">${totalSongs} songs total</div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        function openSetlist(id) {
+            currentSetlistId = id;
+            const setlist = getCurrentSetlist();
+            
+            document.getElementById('detailTitle').textContent = setlist.title;
+            document.getElementById('detailDate').textContent = setlist.date;
+            
+            renderSet('set1');
+            renderSet('set2');
+            renderSet('spares');
+            
+            showScreen('detailScreen');
+        }
+
+        function showNewSetlistModal() {
+            document.getElementById('setlistTitle').value = '';
+            document.getElementById('setlistDate').valueAsDate = new Date();
+            document.getElementById('newSetlistModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('newSetlistModal').classList.remove('active');
+            document.getElementById('copySetlistModal').classList.remove('active');
+        }
+
+        function createEmptySetlist() {
+            const title = document.getElementById('setlistTitle').value.trim();
+            const dateInput = document.getElementById('setlistDate').value;
+            
+            if (!title) {
+                alert('Please enter a title');
+                return;
+            }
+            
+            const date = new Date(dateInput).toLocaleDateString('en-GB');
+            
+            const newSetlist = {
+                id: Date.now().toString(),
+                title: title,
+                date: date,
+                setlists: {
+                    set1: [],
+                    set2: [],
+                    spares: []
+                },
+                playedSongs: { set1: [], set2: [], spares: [] }
+            };
+            
+            allSetlists.push(newSetlist);
+            saveAllSetlists();
+            closeModal();
+            renderSetlistsList();
+        }
+
+        function showCopyOptions() {
+            const container = document.getElementById('copySetlistsList');
+            container.innerHTML = '';
+            
+            allSetlists.forEach(setlist => {
+                const btn = document.createElement('button');
+                btn.className = 'modal-btn';
+                btn.textContent = setlist.title;
+                btn.onclick = () => copyFromSetlist(setlist.id);
+                container.appendChild(btn);
+            });
+            
+            document.getElementById('newSetlistModal').classList.remove('active');
+            document.getElementById('copySetlistModal').classList.add('active');
+        }
+
+        function copyFromSetlist(sourceId) {
+            const title = document.getElementById('setlistTitle').value.trim();
+            const dateInput = document.getElementById('setlistDate').value;
+            
+            if (!title) {
+                alert('Please enter a title');
+                return;
+            }
+            
+            const date = new Date(dateInput).toLocaleDateString('en-GB');
+            const sourceSetlist = allSetlists.find(s => s.id === sourceId);
+            
+            const newSetlist = {
+                id: Date.now().toString(),
+                title: title,
+                date: date,
+                setlists: JSON.parse(JSON.stringify(sourceSetlist.setlists)),
+                playedSongs: { set1: [], set2: [], spares: [] }
+            };
+            
+            allSetlists.push(newSetlist);
+            saveAllSetlists();
+            closeModal();
+            renderSetlistsList();
+        }
+
+        function backToNewSetlist() {
+            document.getElementById('copySetlistModal').classList.remove('active');
+            document.getElementById('newSetlistModal').classList.add('active');
+        }
+
+        function switchTab(setId) {
+            document.querySelectorAll('.setlist').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            
+            document.getElementById(setId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function parseSongTitle(song) {
+            const match = song.match(/^(.+?)(\s*\([^)]+\))?(\s*–\s*[A-Z])?$/);
+            if (match) {
+                const title = match[1].trim();
+                const note = ((match[2] || '') + (match[3] || '')).trim();
+                return { title, note };
+            }
+            return { title: song, note: '' };
+        }
+
+        function renderSet(setId) {
+            const setlist = getCurrentSetlist();
+            if (!setlist) return;
+            
+            const container = document.getElementById(`${setId}-songs`);
+            container.innerHTML = '';
+            
+            setlist.setlists[setId].forEach((song, index) => {
+                const { title, note } = parseSongTitle(song);
+                
+                const songEl = document.createElement('div');
+                songEl.className = 'song';
+                songEl.draggable = true;
+                songEl.dataset.index = index;
+                songEl.dataset.set = setId;
+                
+                songEl.innerHTML = `
+                    <div class="drag-handle">☰</div>
+                    <div class="song-info">
+                        <div class="song-title">${title}</div>
+                        ${note ? `<div class="song-note">${note}</div>` : ''}
+                    </div>
+                `;
+                
+                // Long press handlers
+                songEl.addEventListener('touchstart', (e) => {
+                    longPressActive = false;
+                    longPressTimer = setTimeout(() => {
+                        longPressActive = true;
+                        showContextMenu(setId, index, song);
+                        navigator.vibrate && navigator.vibrate(50);
+                    }, 500);
+                });
+
+                songEl.addEventListener('touchend', (e) => {
+                    clearTimeout(longPressTimer);
+                });
+
+                songEl.addEventListener('touchmove', (e) => {
+                    clearTimeout(longPressTimer);
+                });
+
+                // Mouse long press for desktop
+                songEl.addEventListener('mousedown', (e) => {
+                    if (e.target.closest('.drag-handle')) return;
+                    longPressActive = false;
+                    longPressTimer = setTimeout(() => {
+                        longPressActive = true;
+                        showContextMenu(setId, index, song);
+                    }, 500);
+                });
+
+                songEl.addEventListener('mouseup', (e) => {
+                    clearTimeout(longPressTimer);
+                });
+
+                songEl.addEventListener('mouseleave', (e) => {
+                    clearTimeout(longPressTimer);
+                });
+
+                // Drag events
+                songEl.addEventListener('dragstart', handleDragStart);
+                songEl.addEventListener('dragend', handleDragEnd);
+                songEl.addEventListener('dragover', handleDragOver);
+                songEl.addEventListener('drop', handleDrop);
+                songEl.addEventListener('dragenter', handleDragEnter);
+                songEl.addEventListener('dragleave', handleDragLeave);
+                
+                container.appendChild(songEl);
+            });
+        }
+
+        function handleDragStart(e) {
+            draggedElement = this;
+            draggedIndex = parseInt(this.dataset.index);
+            currentSet = this.dataset.set;
+            
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.innerHTML);
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            document.querySelectorAll('.song').forEach(song => {
+                song.classList.remove('drag-over');
+            });
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragEnter(e) {
+            if (this !== draggedElement && this.dataset.set === currentSet) {
+                this.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+            
+            const setlist = getCurrentSetlist();
+            if (draggedElement !== this && this.dataset.set === currentSet) {
+                const dropIndex = parseInt(this.dataset.index);
+                const setId = this.dataset.set;
+                
+                const songs = [...setlist.setlists[setId]];
+                const [removed] = songs.splice(draggedIndex, 1);
+                songs.splice(dropIndex, 0, removed);
+                setlist.setlists[setId] = songs;
+                
+                saveAllSetlists();
+                renderSet(setId);
+            }
+            
+            return false;
+        }
+
+        function showContextMenu(setId, index, song) {
+            contextMenuSongIndex = index;
+            contextMenuSet = setId;
+            
+            const { title, note } = parseSongTitle(song);
+            document.getElementById('contextSongTitle').textContent = title;
+            document.getElementById('contextSongNote').textContent = note;
+            
+            // Hide current set option
+            document.getElementById('moveToSet1Btn').style.display = setId === 'set1' ? 'none' : 'block';
+            document.getElementById('moveToSet2Btn').style.display = setId === 'set2' ? 'none' : 'block';
+            document.getElementById('moveToSparesBtn').style.display = setId === 'spares' ? 'none' : 'block';
+            
+            document.getElementById('contextMenu').classList.add('active');
+        }
+
+        function closeContextMenu() {
+            document.getElementById('contextMenu').classList.remove('active');
+            contextMenuSongIndex = null;
+            contextMenuSet = null;
+        }
+
+        function moveToSet(targetSet) {
+            if (contextMenuSongIndex === null || contextMenuSet === null) return;
+            
+            const setlist = getCurrentSetlist();
+            const song = setlist.setlists[contextMenuSet][contextMenuSongIndex];
+            
+            // Remove from source
+            setlist.setlists[contextMenuSet].splice(contextMenuSongIndex, 1);
+            
+            // Add to target
+            setlist.setlists[targetSet].push(song);
+            
+            saveAllSetlists();
+            renderSet(contextMenuSet);
+            renderSet(targetSet);
+            closeContextMenu();
+        }
+
+        function deleteSong() {
+            if (contextMenuSongIndex === null || contextMenuSet === null) return;
+            
+            if (confirm('Delete this song?')) {
+                const setlist = getCurrentSetlist();
+                setlist.setlists[contextMenuSet].splice(contextMenuSongIndex, 1);
+                
+                saveAllSetlists();
+                renderSet(contextMenuSet);
+                closeContextMenu();
+            }
+        }
+
+        function resetSet(setId) {
+            const setlist = getCurrentSetlist();
+            if (confirm(`Reset ${setId.toUpperCase()} to original order and clear played songs?`)) {
+                const defaultSetlist = allSetlists.find(s => s.id === 'default');
+                setlist.setlists[setId] = [...defaultSetlist.setlists[setId]];
+                setlist.playedSongs[setId] = [];
+                saveAllSetlists();
+                renderSet(setId);
+            }
+        }
+
+        // Initialize
+        // Wait for Firebase SDK to load before initializing
+        function startApp() {
+            const hasFirebaseConfig = initFirebase();
+            
+            renderSetlistsList();
+
+            // Show Firebase setup on first launch if not configured
+            if (!hasFirebaseConfig && !localStorage.getItem('demoModeAcknowledged')) {
+                setTimeout(() => {
+                    if (confirm('Enable real-time sync with Firebase?\n\nThis allows all band members to see live updates.\n\nClick OK to set up, or Cancel to use local-only mode.')) {
+                        showFirebaseSetup();
+                    } else {
+                        localStorage.setItem('demoModeAcknowledged', 'true');
+                    }
+                }, 1000);
+            }
+        }
+
+        // Check if Firebase is loaded, if not wait
+        if (typeof firebase !== 'undefined') {
+            startApp();
+        } else {
+            window.addEventListener('load', () => {
+                setTimeout(startApp, 500);
+            });
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed'));
+        }
+    </script>
+</body>
+</html>
