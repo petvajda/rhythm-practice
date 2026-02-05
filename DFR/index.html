@@ -761,6 +761,7 @@
 
             <div class="modal-buttons">
                 <button class="modal-btn" onclick="saveFirebaseConfig()">Save & Connect</button>
+                <button class="modal-btn" onclick="loadMasterSongsFromFile()" style="background: rgba(96, 165, 250, 0.2);">Load masterSongs.json</button>
                 <button class="modal-btn" onclick="uploadMasterSongs()" style="background: rgba(34, 197, 94, 0.2);">Upload Master Songs</button>
                 <button class="modal-btn" onclick="migrateSetlists()" style="background: rgba(96, 165, 250, 0.2);">Migrate Setlists to IDs</button>
                 <button class="modal-btn cancel" onclick="closeFirebaseSetup()">Close</button>
@@ -844,24 +845,23 @@
         function setupFirebaseListeners() {
             if (!database) return;
             
-            console.log('🔍 Checking for master songs in Firebase...');
+            console.log('🔍 Loading master songs from Firebase...');
             
-            // Sync master songs to Firebase once
+            // Load master songs from Firebase
             database.ref('masterSongs').once('value', (snapshot) => {
-                if (!snapshot.exists()) {
-                    console.log('📤 Master songs not found. Uploading now...');
-                    // First time - upload master songs
-                    database.ref('masterSongs').set(masterSongs)
-                        .then(() => {
-                            console.log('✅ Master songs uploaded to Firebase successfully!');
-                            console.log('📊 Uploaded', Object.keys(masterSongs).length, 'songs');
-                        })
-                        .catch((error) => {
-                            console.error('❌ Failed to upload master songs:', error);
-                        });
+                if (snapshot.exists()) {
+                    masterSongs = snapshot.val();
+                    console.log('✅ Master songs loaded from Firebase');
+                    console.log('📊 Loaded', Object.keys(masterSongs).length, 'songs');
+                    
+                    // Refresh current view if on detail screen
+                    if (currentSetlistId && document.getElementById('detailScreen').classList.contains('active')) {
+                        renderSet('set1');
+                        renderSet('set2');
+                        renderSet('spares');
+                    }
                 } else {
-                    console.log('✅ Master songs already exist in Firebase');
-                    console.log('📊 Found', Object.keys(snapshot.val()).length, 'songs');
+                    console.log('⚠️ Master songs not found in Firebase. Upload them using the settings button.');
                 }
             });
             
@@ -1041,6 +1041,14 @@
             }
 
             const feedbackDiv = document.getElementById('firebaseFeedback');
+            
+            // Check if masterSongs is empty (need to load from file)
+            if (Object.keys(masterSongs).length === 0) {
+                feedbackDiv.className = 'firebase-feedback error';
+                feedbackDiv.textContent = '❌ No master songs loaded. Please upload masterSongs.json from GitHub first.';
+                return;
+            }
+
             feedbackDiv.className = 'firebase-feedback connecting';
             feedbackDiv.textContent = '🔄 Uploading master songs to Firebase...';
 
@@ -1054,6 +1062,36 @@
                     feedbackDiv.className = 'firebase-feedback error';
                     feedbackDiv.textContent = `❌ Upload failed: ${error.message}`;
                     console.error('❌ Upload error:', error);
+                });
+        }
+
+        function loadMasterSongsFromFile() {
+            const feedbackDiv = document.getElementById('firebaseFeedback');
+            feedbackDiv.className = 'firebase-feedback connecting';
+            feedbackDiv.textContent = '🔄 Loading masterSongs.json from GitHub...';
+
+            // Fetch from GitHub Pages
+            fetch('masterSongs.json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('File not found. Make sure masterSongs.json is uploaded to GitHub.');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.masterSongs) {
+                        masterSongs = data.masterSongs;
+                        feedbackDiv.className = 'firebase-feedback success';
+                        feedbackDiv.textContent = `✅ Loaded ${Object.keys(masterSongs).length} songs from file. Click "Upload Master Songs" to sync to Firebase.`;
+                        console.log('✅ Master songs loaded from file:', masterSongs);
+                    } else {
+                        throw new Error('Invalid file format. Expected { "masterSongs": {...} }');
+                    }
+                })
+                .catch((error) => {
+                    feedbackDiv.className = 'firebase-feedback error';
+                    feedbackDiv.textContent = `❌ Failed to load file: ${error.message}`;
+                    console.error('❌ Load error:', error);
                 });
         }
 
@@ -1078,8 +1116,8 @@
                         // No setlists exist - create default one
                         const migratedSetlists = [{
                             id: 'default',
-                            title: 'DFR with Becky',
-                            date: '24/01/2026',
+                            title: 'Master',
+                            date: new Date().toLocaleDateString('en-GB'),
                             setlists: defaultSetlists
                         }];
                         
@@ -1235,92 +1273,21 @@
             closeFirebaseSetup();
         }
 
-        // Master song database
-        const masterSongs = {
-            "aint-no-mountain": { title: "Ain't No Mountain High Enough", author: "Marvin Gaye & Tammi Terrell", key: "" },
-            "aint-nobody": { title: "Ain't Nobody", author: "Chaka Khan", key: "" },
-            "cant-fight-moonlight": { title: "Can't Fight The Moonlight", author: "LeAnn Rimes", key: "" },
-            "chelsea-dagger": { title: "Chelsea Dagger", author: "The Fratellis", key: "" },
-            "cosmic-girl": { title: "Cosmic Girl", author: "Jamiroquai", key: "" },
-            "dont-start-now": { title: "Don't Start Now", author: "Dua Lipa", key: "" },
-            "forget-you": { title: "Forget You", author: "CeeLo Green", key: "" },
-            "free-from-desire": { title: "Free From Desire", author: "Gala", key: "" },
-            "funky-music": { title: "Play That Funky Music", author: "Wild Cherry", key: "" },
-            "get-lucky": { title: "Get Lucky", author: "Daft Punk ft. Pharrell Williams", key: "" },
-            "gimme-gimme-gimme": { title: "Gimme! Gimme! Gimme! (A Man After Midnight)", author: "ABBA", key: "" },
-            "hot-stuff": { title: "Hot Stuff", author: "Donna Summer", key: "" },
-            "i-will-survive": { title: "I Will Survive", author: "Gloria Gaynor", key: "G" },
-            "i-wish-superstition": { title: "I Wish / Superstition", author: "Stevie Wonder", key: "E" },
-            "love-foolosophy": { title: "Love Foolosophy", author: "Jamiroquai", key: "" },
-            "love-shack": { title: "Love Shack", author: "The B-52's", key: "" },
-            "man-i-feel-like-a-woman": { title: "Man! I Feel Like A Woman!", author: "Shania Twain", key: "" },
-            "mr-brightside": { title: "Mr. Brightside", author: "The Killers", key: "" },
-            "murder-on-the-dancefloor": { title: "Murder On The Dancefloor", author: "Sophie Ellis-Bextor", key: "" },
-            "pink-pony-club": { title: "Pink Pony Club", author: "Chappell Roan", key: "" },
-            "proud-mary": { title: "Proud Mary", author: "Tina Turner", key: "" },
-            "sex-on-fire": { title: "Sex On Fire", author: "Kings of Leon", key: "" },
-            "shes-so-lovely": { title: "She's So Lovely", author: "Scouting for Girls", key: "" },
-            "shut-up-and-dance": { title: "Shut Up And Dance", author: "Walk the Moon", key: "" },
-            "signed-sealed-delivered": { title: "Signed, Sealed, Delivered I'm Yours", author: "Stevie Wonder", key: "" },
-            "simply-the-best": { title: "Simply The Best", author: "Tina Turner", key: "" },
-            "sing-it-back": { title: "Sing It Back", author: "Moloko", key: "" },
-            "summer-of-69": { title: "Summer of '69", author: "Bryan Adams", key: "" },
-            "teenage-dirtbag": { title: "Teenage Dirtbag", author: "Wheatus", key: "" },
-            "this-love": { title: "This Love", author: "Maroon 5", key: "" },
-            "treasure": { title: "Treasure", author: "Bruno Mars", key: "" },
-            "valerie": { title: "Valerie", author: "Amy Winehouse", key: "" },
-            "we-are-family": { title: "We Are Family", author: "Sister Sledge", key: "" }
-        };
+        // Master songs will be loaded from Firebase
+        let masterSongs = {};
 
-        // Default setlists now use song IDs
+        // Default setlists - empty by default, loaded from Firebase
         const defaultSetlists = {
-            set1: [
-                "treasure",
-                "murder-on-the-dancefloor",
-                "valerie",
-                "pink-pony-club",
-                "love-foolosophy",
-                "we-are-family",
-                "aint-nobody",
-                "aint-no-mountain",
-                "i-wish-superstition",
-                "this-love",
-                "love-shack",
-                "funky-music",
-                "cant-fight-moonlight",
-                "teenage-dirtbag",
-                "simply-the-best"
-            ],
-            set2: [
-                "signed-sealed-delivered",
-                "dont-start-now",
-                "sing-it-back",
-                "cosmic-girl",
-                "forget-you",
-                "shes-so-lovely",
-                "hot-stuff",
-                "get-lucky",
-                "free-from-desire",
-                "gimme-gimme-gimme",
-                "man-i-feel-like-a-woman",
-                "proud-mary",
-                "mr-brightside",
-                "chelsea-dagger",
-                "i-will-survive"
-            ],
-            spares: [
-                "shut-up-and-dance",
-                "sex-on-fire",
-                "summer-of-69"
-            ]
+            set1: [],
+            set2: [],
+            spares: []
         };
 
         let allSetlists = JSON.parse(localStorage.getItem('dfrAllSetlists')) || [{
             id: 'default',
-            title: 'DFR with Becky',
-            date: '24/01/2026',
-            setlists: JSON.parse(JSON.stringify(defaultSetlists)),
-            playedSongs: { set1: [], set2: [], spares: [] }
+            title: 'Master',
+            date: new Date().toLocaleDateString('en-GB'),
+            setlists: JSON.parse(JSON.stringify(defaultSetlists))
         }];
 
         let currentSetlistId = null;
