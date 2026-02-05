@@ -1329,6 +1329,17 @@
                 return;
             }
             
+            // Ensure setlists structure exists (Firebase might strip empty arrays)
+            if (!setlist.setlists) {
+                setlist.setlists = {
+                    set1: [],
+                    set2: [],
+                    spares: []
+                };
+                // Save back to Firebase
+                saveAllSetlists();
+            }
+            
             document.getElementById('detailTitle').textContent = setlist.title || 'Setlist';
             document.getElementById('detailDate').textContent = setlist.date || '';
             
@@ -1759,6 +1770,14 @@
             if (contextMenuSongIndex === null || contextMenuSet === null) return;
             
             const setlist = getCurrentSetlist();
+            if (!setlist || !setlist.setlists) return;
+            
+            // Ensure both source and target sets exist
+            if (!setlist.setlists[contextMenuSet] || !setlist.setlists[targetSet]) {
+                console.error('Set not found:', contextMenuSet, targetSet);
+                return;
+            }
+            
             const song = setlist.setlists[contextMenuSet][contextMenuSongIndex];
             
             // Remove from source
@@ -1792,6 +1811,8 @@
             
             if (confirm('Delete this song?')) {
                 const setlist = getCurrentSetlist();
+                if (!setlist || !setlist.setlists || !setlist.setlists[contextMenuSet]) return;
+                
                 const deletedIndex = contextMenuSongIndex;
                 
                 setlist.setlists[contextMenuSet].splice(contextMenuSongIndex, 1);
@@ -1981,6 +2002,20 @@
             
             const setlist = getCurrentSetlist();
             if (!setlist) return;
+            
+            // Ensure setlists structure exists
+            if (!setlist.setlists) {
+                setlist.setlists = {
+                    set1: [],
+                    set2: [],
+                    spares: []
+                };
+            }
+            
+            // Ensure the specific set exists
+            if (!setlist.setlists[currentAddToSet]) {
+                setlist.setlists[currentAddToSet] = [];
+            }
             
             // Add selected songs to the current set
             const songsToAdd = Array.from(selectedSongIds);
