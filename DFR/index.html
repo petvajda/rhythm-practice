@@ -995,11 +995,14 @@
                 const firebaseData = snapshot.val();
                 
                 if (firebaseData && !isSyncing) {
+                    // Ensure firebaseData is an array
+                    let setlistsArray = Array.isArray(firebaseData) ? firebaseData : [];
+                    
                     // Detect what changed
-                    const changedSets = detectChanges(allSetlists, firebaseData);
+                    const changedSets = detectChanges(allSetlists, setlistsArray);
                     
                     // Update local data from Firebase
-                    allSetlists = firebaseData;
+                    allSetlists = setlistsArray;
                     
                     // Refresh UI if on home screen
                     if (document.getElementById('homeScreen').classList.contains('active')) {
@@ -1321,8 +1324,13 @@
             currentSetlistId = id;
             const setlist = getCurrentSetlist();
             
-            document.getElementById('detailTitle').textContent = setlist.title;
-            document.getElementById('detailDate').textContent = setlist.date;
+            if (!setlist) {
+                console.error('Setlist not found:', id);
+                return;
+            }
+            
+            document.getElementById('detailTitle').textContent = setlist.title || 'Setlist';
+            document.getElementById('detailDate').textContent = setlist.date || '';
             
             renderSet('set1');
             renderSet('set2');
@@ -1466,6 +1474,12 @@
             
             const container = document.getElementById(`${setId}-songs`);
             container.innerHTML = '';
+            
+            // Check if setlists property exists and the specific set exists
+            if (!setlist.setlists || !setlist.setlists[setId]) {
+                console.warn(`Set ${setId} not found in setlist`, setlist);
+                return;
+            }
             
             setlist.setlists[setId].forEach((songId, index) => {
                 const { id, title, author, key } = formatSongDisplay(songId);
