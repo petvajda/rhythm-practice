@@ -267,6 +267,48 @@
           "summer-of-69"
         ]
       }
+    },
+    {
+      "id": "1770332746051",
+      "title": "Market Inn",
+      "date": "06/02/2026",
+      "setlists": {
+        "set1": [
+          "never-too-much",
+          "murder-on-the-dancefloor",
+          "valerie",
+          "car-wash",
+          "somebody-elses-guy",
+          "aint-nobody",
+          "aint-no-mountain",
+          "young-hearts-run-free",
+          "lady-marmalade",
+          "we-are-family",
+          "love-foolosophy",
+          "i-am-coming-out",
+          "upside-down",
+          "greatest-dancer",
+          "this-love",
+          "i-wanna-dance-with-somebody"
+        ],
+        "set2": [
+          "treasure",
+          "bad-girls",
+          "pink-pony-club",
+          "forget-you",
+          "shes-so-lovely",
+          "hot-stuff",
+          "get-lucky",
+          "free-from-desire",
+          "finally",
+          "gimme-gimme-gimme",
+          "mr-brightside",
+          "sex-on-fire",
+          "teenage-dirtbag",
+          "i-will-survive"
+        ],
+        "spares": []
+      }
     }
   ]
 }
