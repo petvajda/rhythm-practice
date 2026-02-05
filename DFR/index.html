@@ -735,10 +735,7 @@
     <!-- Firebase Setup Modal -->
     <div class="firebase-setup" id="firebaseSetup">
         <div class="firebase-setup-content">
-            <div class="firebase-setup-title">🔥 Firebase Setup</div>
-            <div class="firebase-setup-text">
-                To enable real-time sync across all band members, you need to configure Firebase.
-            </div>
+            <div class="firebase-setup-title">🔥 Firebase Configuration</div>
             
             <div class="firebase-status">
                 <div class="firebase-status-indicator">
@@ -747,16 +744,8 @@
                 </div>
             </div>
 
-            <div class="firebase-setup-text" style="font-weight: 600; color: white; margin-top: 20px;">
-                Quick Setup Guide:
-            </div>
             <div class="firebase-setup-text">
-                1. Go to <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a><br>
-                2. Create a new project (or use existing)<br>
-                3. Go to Project Settings → General<br>
-                4. Scroll to "Your apps" → Web app<br>
-                5. Copy your Firebase config<br>
-                6. Paste it below:
+                Add your Firebase API key:
             </div>
 
             <textarea class="modal-input" id="firebaseConfig" placeholder='Paste Firebase config here:
@@ -772,7 +761,6 @@
 
             <div class="modal-buttons">
                 <button class="modal-btn" onclick="saveFirebaseConfig()">Save & Connect</button>
-                <button class="modal-btn" onclick="testWithDemo()" style="background: rgba(96, 165, 250, 0.2);">Try Demo Mode (Local Only)</button>
                 <button class="modal-btn cancel" onclick="closeFirebaseSetup()">Close</button>
             </div>
 
