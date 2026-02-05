@@ -1100,43 +1100,43 @@
 
         const defaultSetlists = {
             set1: [
-                'Treasure',
-                'Murder On The Dancefloor',
-                'Valerie',
-                'Pink Pony Club',
-                'Love foolosophy',
-                'We Are Family',
-                "Ain't Nobody",
-                'Aint No Mountain (record key) (Both)',
-                'I wish / Superstition – E',
-                'This Love',
-                'Love shack (Both)',
-                'Funky music',
-                "Can't Fight The Moonlight",
-                'Teenage Dirtbag (Both)',
-                'Simply The Best'
+                { title: 'Treasure', author: 'Bruno Mars', key: '' },
+                { title: 'Murder On The Dancefloor', author: 'Sophie Ellis-Bextor', key: '' },
+                { title: 'Valerie', author: 'Amy Winehouse', key: '' },
+                { title: 'Pink Pony Club', author: 'Chappell Roan', key: '' },
+                { title: 'Love foolosophy', author: 'Jamiroquai', key: '' },
+                { title: 'We Are Family', author: 'Sister Sledge', key: '' },
+                { title: "Ain't Nobody", author: 'Chaka Khan', key: '' },
+                { title: 'Aint No Mountain', author: 'Marvin Gaye', key: 'record key' },
+                { title: 'I wish / Superstition', author: 'Stevie Wonder', key: 'E' },
+                { title: 'This Love', author: 'Maroon 5', key: '' },
+                { title: 'Love shack', author: 'The B-52s', key: '' },
+                { title: 'Funky music', author: 'Wild Cherry', key: '' },
+                { title: "Can't Fight The Moonlight", author: 'LeAnn Rimes', key: '' },
+                { title: 'Teenage Dirtbag', author: 'Wheatus', key: '' },
+                { title: 'Simply The Best', author: 'Tina Turner', key: '' }
             ],
             set2: [
-                'Signed, Sealed Delivered',
-                "Don't Start Now",
-                'Sing It Back',
-                'Cosmic Girl',
-                'Forget You',
-                "She's so lovely (J)",
-                'Hot Stuff',
-                'Get Lucky (Both)',
-                'Free From Desire',
-                'Gimme, Gimme, Gimme',
-                'Man, I Feel Like A Woman',
-                'Proud Mary',
-                'Mr Brightside (J)',
-                'Chelsea Dagger',
-                'I Will Survive – G'
+                { title: 'Signed, Sealed Delivered', author: 'Stevie Wonder', key: '' },
+                { title: "Don't Start Now", author: 'Dua Lipa', key: '' },
+                { title: 'Sing It Back', author: 'Moloko', key: '' },
+                { title: 'Cosmic Girl', author: 'Jamiroquai', key: '' },
+                { title: 'Forget You', author: 'CeeLo Green', key: '' },
+                { title: "She's so lovely", author: 'Scouting for Girls', key: '' },
+                { title: 'Hot Stuff', author: 'Donna Summer', key: '' },
+                { title: 'Get Lucky', author: 'Daft Punk', key: '' },
+                { title: 'Free From Desire', author: 'Gala', key: '' },
+                { title: 'Gimme, Gimme, Gimme', author: 'ABBA', key: '' },
+                { title: 'Man, I Feel Like A Woman', author: 'Shania Twain', key: '' },
+                { title: 'Proud Mary', author: 'Tina Turner', key: '' },
+                { title: 'Mr Brightside', author: 'The Killers', key: '' },
+                { title: 'Chelsea Dagger', author: 'The Fratellis', key: '' },
+                { title: 'I Will Survive', author: 'Gloria Gaynor', key: 'G' }
             ],
             spares: [
-                'Shut Up And Dance (Both)',
-                'Sex on fire (Both)',
-                'Summer of 69'
+                { title: 'Shut Up And Dance', author: 'Walk The Moon', key: '' },
+                { title: 'Sex on fire', author: 'Kings of Leon', key: '' },
+                { title: 'Summer of 69', author: "Bryan Adams", key: '' }
             ]
         };
 
@@ -1305,14 +1305,22 @@
             event.target.classList.add('active');
         }
 
-        function parseSongTitle(song) {
-            const match = song.match(/^(.+?)(\s*\([^)]+\))?(\s*–\s*[A-Z])?$/);
-            if (match) {
-                const title = match[1].trim();
-                const note = ((match[2] || '') + (match[3] || '')).trim();
-                return { title, note };
+        function formatSongDisplay(song) {
+            // Handle both old string format and new object format
+            if (typeof song === 'string') {
+                // Legacy format - convert to object
+                return { title: song, author: '', key: '' };
             }
-            return { title: song, note: '' };
+            return {
+                title: song.title || '',
+                author: song.author || '',
+                key: song.key || ''
+            };
+        }
+
+        function getSongKey(song) {
+            const formatted = formatSongDisplay(song);
+            return formatted.key ? ` (${formatted.key})` : '';
         }
 
         function renderSet(setId) {
@@ -1323,7 +1331,8 @@
             container.innerHTML = '';
             
             setlist.setlists[setId].forEach((song, index) => {
-                const { title, note } = parseSongTitle(song);
+                const { title, author, key } = formatSongDisplay(song);
+                const displayKey = key ? ` (${key})` : '';
                 
                 const songEl = document.createElement('div');
                 songEl.className = 'song';
@@ -1333,8 +1342,7 @@
                 songEl.innerHTML = `
                     <div class="drag-handle">☰</div>
                     <div class="song-info">
-                        <div class="song-title">${title}</div>
-                        ${note ? `<div class="song-note">${note}</div>` : ''}
+                        <div class="song-title">${title}${displayKey}</div>
                     </div>
                 `;
                 
@@ -1457,18 +1465,20 @@
             
             songs.forEach((songEl, newIndex) => {
                 const oldIndex = parseInt(songEl.dataset.originalIndex || songEl.dataset.index);
-                const title = songEl.querySelector('.song-title').textContent;
-                const note = songEl.querySelector('.song-note')?.textContent || '';
+                const titleWithKey = songEl.querySelector('.song-title').textContent;
+                
+                // Extract just the title (remove key if present)
+                const title = titleWithKey.replace(/\s*\([^)]+\)\s*$/, '').trim();
                 
                 // Track which items moved
                 if (oldIndex !== newIndex) {
                     movedIndices.push(newIndex);
                 }
                 
-                // Find original song text
+                // Find original song object
                 const originalSong = setlist.setlists[setId].find(s => {
-                    const parsed = parseSongTitle(s);
-                    return parsed.title === title;
+                    const formatted = formatSongDisplay(s);
+                    return formatted.title === title;
                 });
                 
                 if (originalSong) {
@@ -1571,9 +1581,18 @@
             contextMenuSongIndex = index;
             contextMenuSet = setId;
             
-            const { title, note } = parseSongTitle(song);
+            const { title, author, key } = formatSongDisplay(song);
+            
             document.getElementById('contextSongTitle').textContent = title;
-            document.getElementById('contextSongNote').textContent = note;
+            
+            // Build info line with author and key
+            const infoLines = [];
+            if (author) infoLines.push(`Artist: ${author}`);
+            if (key) infoLines.push(`Key: ${key}`);
+            
+            const noteEl = document.getElementById('contextSongNote');
+            noteEl.textContent = infoLines.join(' • ');
+            noteEl.style.display = infoLines.length > 0 ? 'block' : 'none';
             
             // Hide current set option
             document.getElementById('moveToSet1Btn').style.display = setId === 'set1' ? 'none' : 'block';
