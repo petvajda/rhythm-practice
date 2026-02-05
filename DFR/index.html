@@ -1491,10 +1491,17 @@
 
         function resetSet(setId) {
             const setlist = getCurrentSetlist();
-            if (confirm(`Reset ${setId.toUpperCase()} to original order and clear played songs?`)) {
+            if (confirm(`Reset ${setId.toUpperCase()} to original order?`)) {
+                // Find the default setlist
                 const defaultSetlist = allSetlists.find(s => s.id === 'default');
-                setlist.setlists[setId] = [...defaultSetlist.setlists[setId]];
-                setlist.playedSongs[setId] = [];
+                
+                if (defaultSetlist && defaultSetlist.setlists[setId]) {
+                    setlist.setlists[setId] = [...defaultSetlist.setlists[setId]];
+                } else {
+                    // If no default found, use the hardcoded defaults
+                    setlist.setlists[setId] = [...defaultSetlists[setId]];
+                }
+                
                 saveAllSetlists();
                 renderSet(setId);
             }
