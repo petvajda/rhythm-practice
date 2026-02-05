@@ -1,0 +1,169 @@
+{
+  "masterSongs": {
+    "aint-no-mountain": {
+      "title": "Ain't No Mountain High Enough",
+      "author": "Marvin Gaye & Tammi Terrell",
+      "key": ""
+    },
+    "aint-nobody": {
+      "title": "Ain't Nobody",
+      "author": "Chaka Khan",
+      "key": ""
+    },
+    "cant-fight-moonlight": {
+      "title": "Can't Fight The Moonlight",
+      "author": "LeAnn Rimes",
+      "key": ""
+    },
+    "chelsea-dagger": {
+      "title": "Chelsea Dagger",
+      "author": "The Fratellis",
+      "key": ""
+    },
+    "cosmic-girl": {
+      "title": "Cosmic Girl",
+      "author": "Jamiroquai",
+      "key": ""
+    },
+    "dont-start-now": {
+      "title": "Don't Start Now",
+      "author": "Dua Lipa",
+      "key": ""
+    },
+    "forget-you": {
+      "title": "Forget You",
+      "author": "CeeLo Green",
+      "key": ""
+    },
+    "free-from-desire": {
+      "title": "Free From Desire",
+      "author": "Gala",
+      "key": ""
+    },
+    "funky-music": {
+      "title": "Play That Funky Music",
+      "author": "Wild Cherry",
+      "key": ""
+    },
+    "get-lucky": {
+      "title": "Get Lucky",
+      "author": "Daft Punk ft. Pharrell Williams",
+      "key": ""
+    },
+    "gimme-gimme-gimme": {
+      "title": "Gimme! Gimme! Gimme! (A Man After Midnight)",
+      "author": "ABBA",
+      "key": ""
+    },
+    "hot-stuff": {
+      "title": "Hot Stuff",
+      "author": "Donna Summer",
+      "key": ""
+    },
+    "i-will-survive": {
+      "title": "I Will Survive",
+      "author": "Gloria Gaynor",
+      "key": "G"
+    },
+    "i-wish-superstition": {
+      "title": "I Wish / Superstition",
+      "author": "Stevie Wonder",
+      "key": "E"
+    },
+    "love-foolosophy": {
+      "title": "Love Foolosophy",
+      "author": "Jamiroquai",
+      "key": ""
+    },
+    "love-shack": {
+      "title": "Love Shack",
+      "author": "The B-52's",
+      "key": ""
+    },
+    "man-i-feel-like-a-woman": {
+      "title": "Man! I Feel Like A Woman!",
+      "author": "Shania Twain",
+      "key": ""
+    },
+    "mr-brightside": {
+      "title": "Mr. Brightside",
+      "author": "The Killers",
+      "key": ""
+    },
+    "murder-on-the-dancefloor": {
+      "title": "Murder On The Dancefloor",
+      "author": "Sophie Ellis-Bextor",
+      "key": ""
+    },
+    "pink-pony-club": {
+      "title": "Pink Pony Club",
+      "author": "Chappell Roan",
+      "key": ""
+    },
+    "proud-mary": {
+      "title": "Proud Mary",
+      "author": "Tina Turner",
+      "key": ""
+    },
+    "sex-on-fire": {
+      "title": "Sex On Fire",
+      "author": "Kings of Leon",
+      "key": ""
+    },
+    "shes-so-lovely": {
+      "title": "She's So Lovely",
+      "author": "Scouting for Girls",
+      "key": ""
+    },
+    "shut-up-and-dance": {
+      "title": "Shut Up And Dance",
+      "author": "Walk the Moon",
+      "key": ""
+    },
+    "signed-sealed-delivered": {
+      "title": "Signed, Sealed, Delivered I'm Yours",
+      "author": "Stevie Wonder",
+      "key": ""
+    },
+    "simply-the-best": {
+      "title": "Simply The Best",
+      "author": "Tina Turner",
+      "key": ""
+    },
+    "sing-it-back": {
+      "title": "Sing It Back",
+      "author": "Moloko",
+      "key": ""
+    },
+    "summer-of-69": {
+      "title": "Summer of '69",
+      "author": "Bryan Adams",
+      "key": ""
+    },
+    "teenage-dirtbag": {
+      "title": "Teenage Dirtbag",
+      "author": "Wheatus",
+      "key": ""
+    },
+    "this-love": {
+      "title": "This Love",
+      "author": "Maroon 5",
+      "key": ""
+    },
+    "treasure": {
+      "title": "Treasure",
+      "author": "Bruno Mars",
+      "key": ""
+    },
+    "valerie": {
+      "title": "Valerie",
+      "author": "Amy Winehouse",
+      "key": ""
+    },
+    "we-are-family": {
+      "title": "We Are Family",
+      "author": "Sister Sledge",
+      "key": ""
+    }
+  }
+}
