@@ -889,20 +889,39 @@
                 const oldSongs = oldSetlist.setlists[setId] || [];
                 const newSongs = newSetlist.setlists[setId] || [];
                 
-                // Check if order changed or songs added/removed
-                const orderChanged = JSON.stringify(oldSongs) !== JSON.stringify(newSongs);
-                
-                if (orderChanged) {
-                    // Find which songs moved
-                    newSongs.forEach((song, newIndex) => {
-                        const oldIndex = oldSongs.indexOf(song);
-                        if (oldIndex !== -1 && oldIndex !== newIndex) {
-                            changes.push({ setId, index: newIndex, song });
-                        } else if (oldIndex === -1) {
-                            // New song added
-                            changes.push({ setId, index: newIndex, song });
+                // Check if songs were deleted
+                if (newSongs.length < oldSongs.length) {
+                    // Find deleted song positions
+                    oldSongs.forEach((oldSong, oldIndex) => {
+                        if (!newSongs.includes(oldSong)) {
+                            // Song was deleted - highlight before and after
+                            const beforeIndex = oldIndex - 1;
+                            const afterIndex = oldIndex; // This is now where the next song is
+                            
+                            if (beforeIndex >= 0 && beforeIndex < newSongs.length) {
+                                changes.push({ setId, index: beforeIndex, song: newSongs[beforeIndex] });
+                            }
+                            if (afterIndex >= 0 && afterIndex < newSongs.length) {
+                                changes.push({ setId, index: afterIndex, song: newSongs[afterIndex] });
+                            }
                         }
                     });
+                } else {
+                    // Check for reorders or additions
+                    const orderChanged = JSON.stringify(oldSongs) !== JSON.stringify(newSongs);
+                    
+                    if (orderChanged) {
+                        // Find which songs moved or were added
+                        newSongs.forEach((song, newIndex) => {
+                            const oldIndex = oldSongs.indexOf(song);
+                            if (oldIndex !== -1 && oldIndex !== newIndex) {
+                                changes.push({ setId, index: newIndex, song });
+                            } else if (oldIndex === -1) {
+                                // New song added
+                                changes.push({ setId, index: newIndex, song });
+                            }
+                        });
+                    }
                 }
             });
             
@@ -1607,10 +1626,33 @@
             
             if (confirm('Delete this song?')) {
                 const setlist = getCurrentSetlist();
+                const deletedIndex = contextMenuSongIndex;
+                
                 setlist.setlists[contextMenuSet].splice(contextMenuSongIndex, 1);
                 
                 saveAllSetlists();
                 renderSet(contextMenuSet);
+                
+                // Highlight items before and after the deleted position
+                setTimeout(() => {
+                    const container = document.getElementById(`${contextMenuSet}-songs`);
+                    if (container) {
+                        const songs = container.querySelectorAll('.song');
+                        
+                        // Highlight item before (if exists)
+                        const beforeIndex = deletedIndex - 1;
+                        if (beforeIndex >= 0 && beforeIndex < songs.length) {
+                            highlightLocalChange(contextMenuSet, beforeIndex, songs[beforeIndex]);
+                        }
+                        
+                        // Highlight item after (now at deleted position)
+                        const afterIndex = deletedIndex;
+                        if (afterIndex >= 0 && afterIndex < songs.length) {
+                            highlightLocalChange(contextMenuSet, afterIndex, songs[afterIndex]);
+                        }
+                    }
+                }, 100);
+                
                 closeContextMenu();
             }
         }
