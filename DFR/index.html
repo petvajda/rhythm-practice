@@ -1252,7 +1252,13 @@
                 card.className = 'setlist-card';
                 card.onclick = () => openSetlist(setlist.id);
                 
-                const totalSongs = setlist.setlists.set1.length + setlist.setlists.set2.length + setlist.setlists.spares.length;
+                // Safely calculate total songs
+                let totalSongs = 0;
+                if (setlist.setlists) {
+                    totalSongs = (setlist.setlists.set1?.length || 0) + 
+                                (setlist.setlists.set2?.length || 0) + 
+                                (setlist.setlists.spares?.length || 0);
+                }
                 
                 card.innerHTML = `
                     <div class="setlist-card-title">${setlist.title}</div>
@@ -1788,12 +1794,17 @@
 
         function renderMasterSongList(searchTerm = '') {
             const listEl = document.getElementById('masterSongList');
-            const masterSongs = firebaseData.masterSongs || {};
             const setlist = getCurrentSetlist();
+            
+            // Check if masterSongs is loaded
+            if (!masterSongs || Object.keys(masterSongs).length === 0) {
+                listEl.innerHTML = '<div style="color: #9ca3af; padding: 20px; text-align: center;">No master songs available. Please configure Firebase or reload the app.</div>';
+                return;
+            }
             
             // Get currently used songs in this setlist
             const usedSongs = new Set();
-            if (setlist) {
+            if (setlist && setlist.setlists) {
                 Object.values(setlist.setlists).forEach(songs => {
                     songs.forEach(songId => usedSongs.add(songId));
                 });
@@ -1810,6 +1821,11 @@
                     return true;
                 })
                 .sort((a, b) => a[1].title.localeCompare(b[1].title));
+            
+            if (songs.length === 0) {
+                listEl.innerHTML = '<div style="color: #9ca3af; padding: 20px; text-align: center;">No songs found matching your search.</div>';
+                return;
+            }
             
             listEl.innerHTML = songs.map(([id, song]) => {
                 const isUsed = usedSongs.has(id);
@@ -1885,6 +1901,11 @@
         function startApp() {
             const hasFirebaseConfig = initFirebase();
             
+            // If no Firebase, load default data
+            if (!hasFirebaseConfig) {
+                loadDefaultData();
+            }
+            
             // Show Firebase setup on first launch if not configured
             if (!hasFirebaseConfig && !localStorage.getItem('demoModeAcknowledged')) {
                 setTimeout(() => {
@@ -1895,6 +1916,65 @@
                     }
                 }, 1000);
             }
+        }
+
+        // Load default data from embedded JSON
+        function loadDefaultData() {
+            const defaultData = {
+                "masterSongs": {
+                    "aint-no-mountain": {"title": "Ain't No Mountain High Enough", "author": "Marvin Gaye & Tammi Terrell", "key": ""},
+                    "aint-nobody": {"title": "Ain't Nobody", "author": "Chaka Khan", "key": ""},
+                    "cant-fight-moonlight": {"title": "Can't Fight The Moonlight", "author": "LeAnn Rimes", "key": ""},
+                    "chelsea-dagger": {"title": "Chelsea Dagger", "author": "The Fratellis", "key": ""},
+                    "cosmic-girl": {"title": "Cosmic Girl", "author": "Jamiroquai", "key": ""},
+                    "dont-start-now": {"title": "Don't Start Now", "author": "Dua Lipa", "key": ""},
+                    "forget-you": {"title": "Forget You", "author": "CeeLo Green", "key": ""},
+                    "free-from-desire": {"title": "Free From Desire", "author": "Gala", "key": ""},
+                    "funky-music": {"title": "Play That Funky Music", "author": "Wild Cherry", "key": ""},
+                    "get-lucky": {"title": "Get Lucky", "author": "Daft Punk ft. Pharrell Williams", "key": ""},
+                    "gimme-gimme-gimme": {"title": "Gimme! Gimme! Gimme! (A Man After Midnight)", "author": "ABBA", "key": ""},
+                    "hot-stuff": {"title": "Hot Stuff", "author": "Donna Summer", "key": ""},
+                    "i-will-survive": {"title": "I Will Survive", "author": "Gloria Gaynor", "key": "G"},
+                    "i-wish-superstition": {"title": "I Wish / Superstition", "author": "Stevie Wonder", "key": "E"},
+                    "love-foolosophy": {"title": "Love Foolosophy", "author": "Jamiroquai", "key": ""},
+                    "love-shack": {"title": "Love Shack", "author": "The B-52's", "key": ""},
+                    "man-i-feel-like-a-woman": {"title": "Man! I Feel Like A Woman!", "author": "Shania Twain", "key": ""},
+                    "mr-brightside": {"title": "Mr. Brightside", "author": "The Killers", "key": ""},
+                    "murder-on-the-dancefloor": {"title": "Murder On The Dancefloor", "author": "Sophie Ellis-Bextor", "key": ""},
+                    "pink-pony-club": {"title": "Pink Pony Club", "author": "Chappell Roan", "key": ""},
+                    "proud-mary": {"title": "Proud Mary", "author": "Tina Turner", "key": ""},
+                    "sex-on-fire": {"title": "Sex On Fire", "author": "Kings of Leon", "key": ""},
+                    "shes-so-lovely": {"title": "She's So Lovely", "author": "Scouting for Girls", "key": ""},
+                    "shut-up-and-dance": {"title": "Shut Up And Dance", "author": "Walk the Moon", "key": ""},
+                    "signed-sealed-delivered": {"title": "Signed, Sealed, Delivered I'm Yours", "author": "Stevie Wonder", "key": ""},
+                    "simply-the-best": {"title": "Simply The Best", "author": "Tina Turner", "key": ""},
+                    "sing-it-back": {"title": "Sing It Back", "author": "Moloko", "key": ""},
+                    "summer-of-69": {"title": "Summer of '69", "author": "Bryan Adams", "key": ""},
+                    "teenage-dirtbag": {"title": "Teenage Dirtbag", "author": "Wheatus", "key": ""},
+                    "this-love": {"title": "This Love", "author": "Maroon 5", "key": ""},
+                    "treasure": {"title": "Treasure", "author": "Bruno Mars", "key": ""},
+                    "valerie": {"title": "Valerie", "author": "Amy Winehouse", "key": ""},
+                    "we-are-family": {"title": "We Are Family", "author": "Sister Sledge", "key": ""}
+                },
+                "setlists": [{
+                    "id": "master",
+                    "title": "Master",
+                    "date": "05/02/2026",
+                    "setlists": {
+                        "set1": ["treasure", "murder-on-the-dancefloor", "valerie", "pink-pony-club", "love-foolosophy", "we-are-family", "aint-nobody", "aint-no-mountain", "i-wish-superstition", "this-love", "love-shack", "funky-music", "cant-fight-moonlight", "teenage-dirtbag", "simply-the-best"],
+                        "set2": ["signed-sealed-delivered", "dont-start-now", "sing-it-back", "cosmic-girl", "forget-you", "shes-so-lovely", "hot-stuff", "get-lucky", "free-from-desire", "gimme-gimme-gimme", "man-i-feel-like-a-woman", "proud-mary", "mr-brightside", "chelsea-dagger", "i-will-survive"],
+                        "spares": ["shut-up-and-dance", "sex-on-fire", "summer-of-69"]
+                    }
+                }]
+            };
+            
+            masterSongs = defaultData.masterSongs;
+            allSetlists = defaultData.setlists;
+            
+            console.log('✅ Loaded default data:', Object.keys(masterSongs).length, 'songs,', allSetlists.length, 'setlists');
+            
+            // Render the UI
+            renderSetlistsList();
         }
 
         // Check if Firebase is loaded, if not wait
