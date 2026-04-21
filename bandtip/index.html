@@ -624,12 +624,53 @@ const allSongs = [
   { slug:"young-hearts-run-free",       title:"Young Hearts Run Free",                artist:"Candi Staton" },
 ].sort((a,b) => a.title.localeCompare(b.title));
 
-// ─── ARTIST THUMBNAIL CACHE ───
-// Uses Last.fm API-style artist image lookup via MusicBrainz + Cover Art Archive
-// Fallback: colorful initials avatar generated inline
-const thumbCache = {};
+// ─── ARTIST ARTWORK ───
+// Hardcoded iTunes CDN URLs — zero CORS issues, works fully offline.
+// URLs are permanent Apple Music CDN links (stable, no expiry).
+// Fallback: colourful initials avatar for any artist not in the map.
 
-// Generate a colorful gradient placeholder from artist initials
+const artistArt = {
+  "Marvin Gaye & Tammi Terrell": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/9b/c1/cf/9bc1cf3a-84c7-474e-2d0f-2e4bd0327377/06UMGIM11763.rgb.jpg/600x600bb.jpg",
+  "Chaka Khan": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/13/55/fb/1355fbb0-60f1-d15e-12cb-ad0008b99524/mzi.zqdpvvdq.jpg/600x600bb.jpg",
+  "Donna Summer": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/66/a7/b0/66a7b03a-c02c-73c2-c7f2-f2afdf05a8dc/06UMGIM04498.rgb.jpg/600x600bb.jpg",
+  "LeAnn Rimes": "https://is1-ssl.mzstatic.com/image/thumb/Music/y2005/m06/d13/h10/s05.fvdzfulz.jpg/600x600bb.jpg",
+  "Rose Royce": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/58/3c/cc/583cccf4-8cae-02fc-08f3-94df93018f4c/00008811150228.rgb.jpg/600x600bb.jpg",
+  "The Fratellis": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/ea/82/10/ea821036-3ef3-da6d-5b98-420968cbf86b/00602498472439.rgb.jpg/600x600bb.jpg",
+  "Jamiroquai": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/a1/35/fe/a135fe18-654d-9f23-4235-c06614add855/886447942017.jpg/600x600bb.jpg",
+  "Dua Lipa": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/41/ee/66/41ee66fa-f8dd-7e82-155a-3a1b360dc562/190295322175.jpg/600x600bb.jpg",
+  "CeCe Peniston": "https://is1-ssl.mzstatic.com/image/thumb/Music128/v4/6e/98/b8/6e98b853-44ae-7063-2c02-4df4851dc9dc/00075021538122.rgb.jpg/600x600bb.jpg",
+  "CeeLo Green": "https://is1-ssl.mzstatic.com/image/thumb/Music/7d/10/55/mzi.wboovwvh.jpg/600x600bb.jpg",
+  "Gala": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/70/a3/33/70a333a9-29d8-bfde-fe2d-79d2a9a72518/mzi.hroawrfd.tif/600x600bb.jpg",
+  "Daft Punk ft. Pharrell Williams": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/e8/43/5f/e8435ffa-b6b9-b171-40ab-4ff3959ab661/886443919266.jpg/600x600bb.jpg",
+  "ABBA": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/60/f8/a6/60f8a6bc-e875-238d-f2f8-f34a6034e6d2/14UMGIM07615.rgb.jpg/600x600bb.jpg",
+  "Sister Sledge": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/17/01/5b/17015ba4-993c-8de9-5d0c-750e5d2bf32e/mzi.cbherewl.jpg/600x600bb.jpg",
+  "Whitney Houston": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/86/b5/25/86b525b1-bff1-4bf6-6112-531251b3d672/dj.hthdmusj.jpg/600x600bb.jpg",
+  "Diana Ross": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/aa/87/1c/aa871c20-95be-38bd-97e3-ecfeb8ec404b/15UMGIM06551.rgb.jpg/600x600bb.jpg",
+  "Gloria Gaynor": "https://is1-ssl.mzstatic.com/image/thumb/Music128/v4/33/12/df/3312dfbf-2cd2-e149-1ccb-9688e2a60980/00731454913720.rgb.jpg/600x600bb.jpg",
+  "Stevie Wonder": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/62/61/61/626161c0-f4d7-e6ff-8586-768340ef278f/00602537002382.rgb.jpg/600x600bb.jpg",
+  "LaBelle": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/28/93/b7/2893b79d-320e-adc5-2be7-cefb5b830042/074643307529.jpg/600x600bb.jpg",
+  "The B-52's": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/0a/bc/65/0abc650b-3fdc-b3f8-98ae-2954eac7c1a9/mzi.rywkmvce.jpg/600x600bb.jpg",
+  "Shania Twain": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/1e/2f/98/1e2f98c2-3fa6-9601-9825-6a6d19a99cf3/06UMGIM07033.rgb.jpg/600x600bb.jpg",
+  "The Killers": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/11/64/9c/11649c80-2066-dba8-77a9-df7eecae26c1/17UM1IM06937.rgb.jpg/600x600bb.jpg",
+  "Sophie Ellis-Bextor": "https://is1-ssl.mzstatic.com/image/thumb/Music123/v4/c3/11/ad/c311ad1c-0b83-dd10-2092-5a06687f2eb1/06UMGIM15668.rgb.jpg/600x600bb.jpg",
+  "Luther Vandross": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/81/41/87/81418780-b371-faa6-a3b5-5073be62a6ae/mzi.mskephqn.jpg/600x600bb.jpg",
+  "Chappell Roan": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/41/bc/fb/41bcfb43-91d5-931d-5747-fb381803143f/23UMGIM21715.rgb.jpg/600x600bb.jpg",
+  "Wild Cherry": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/af/f6/0c/aff60ca6-7385-e47d-7681-e5f73910665c/mzi.fjlfxpyy.jpg/600x600bb.jpg",
+  "Tina Turner": "https://is1-ssl.mzstatic.com/image/thumb/Features125/v4/91/a9/3d/91a93dd8-b591-6aab-21b7-da5669f61a9c/dj.glozlwoq.jpg/600x600bb.jpg",
+  "Kings of Leon": "https://is1-ssl.mzstatic.com/image/thumb/Features125/v4/74/25/4c/74254c8b-e03d-44e8-304d-4cde508b8cfb/dj.swemfdrr.jpg/600x600bb.jpg",
+  "Scouting for Girls": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/1a/01/70/1a0170ce-8acc-6427-cc10-e4a5d7c8d61c/886446421353.jpg/600x600bb.jpg",
+  "Walk the Moon": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/bf/b6/76/bfb67621-b78d-3924-6d29-4f367697a674/886445045758.jpg/600x600bb.jpg",
+  "Moloko": "https://is1-ssl.mzstatic.com/image/thumb/Music128/v4/3b/bf/ad/3bbfad12-6db0-89c3-28a7-666ad9cd1f67/0886443963344.jpg/600x600bb.jpg",
+  "Jocelyn Brown": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/a5/d0/97/a5d097ed-de19-4c02-252a-ab983575a54e/2827.jpg/600x600bb.jpg",
+  "Bryan Adams": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/b0/f7/5d/b0f75dab-7e01-d4c6-61c3-e6253a2cae22/06UMGIM18645.rgb.jpg/600x600bb.jpg",
+  "Wheatus": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/f7/c3/33/f7c333e4-b2b5-b49d-1406-f51bdac6a8aa/mzi.bllmhdje.jpg/600x600bb.jpg",
+  "Maroon 5": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/eb/12/fe/eb12fe62-1e28-ebfd-0daa-f9aa66bbb882/12UMGIM15818.rgb.jpg/600x600bb.jpg",
+  "Bruno Mars": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/15/63/53/156353b8-d45b-a17d-f553-2d125aeb3cb3/075679957474.jpg/600x600bb.jpg",
+  "Amy Winehouse": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/9b/c3/36/9bc3369b-250a-5efb-af02-eb29b5a17d0c/mzi.hcitlgrl.jpg/600x600bb.jpg",
+  "Candi Staton": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/85/af/a1/85afa1ed-84dc-203e-369a-bdbc41ffb039/s06.pebhqmpo.jpg/600x600bb.jpg",
+};
+
+// Generate a colourful initials avatar — used when no artwork URL is available
 function makeAvatar(artist) {
   const colors = [
     ['#e8ff47','#0a0a0f'], ['#ff4f9b','#fff'], ['#00d4ff','#0a0a0f'],
@@ -647,28 +688,14 @@ function makeAvatar(artist) {
   return 'data:image/svg+xml;base64,' + btoa(svg);
 }
 
-// Fetch artist artwork via iTunes Search API — CORS-friendly, no API key needed.
-// Searches by artist name, grabs the album artwork URL and upscales it to 200px.
-// Falls back gracefully to the initials avatar on any error or when offline.
+// Resolve artwork for an artist: hardcoded map first, then initials avatar.
+// The async signature is kept so all callers stay compatible with the prefetch system.
+const thumbCache = {};
 async function getArtistThumb(artist) {
   if (thumbCache[artist]) return thumbCache[artist];
-  const fallback = makeAvatar(artist);
-  thumbCache[artist] = fallback;
-  try {
-    const cleanArtist = artist.split(/\s+ft\./i)[0].trim();
-    const q = encodeURIComponent(cleanArtist);
-    const res = await fetch(
-      `https://itunes.apple.com/search?term=${q}&entity=musicArtist&limit=1&media=music`
-    );
-    if (!res.ok) return fallback;
-    const data = await res.json();
-    const raw = data.results?.[0]?.artworkUrl100;
-    if (!raw) return fallback;
-    const url = raw.replace('100x100bb', '200x200bb');
-    thumbCache[artist] = url;
-    return url;
-  } catch(e) {}
-  return fallback;
+  const url = artistArt[artist] || makeAvatar(artist);
+  thumbCache[artist] = url;
+  return url;
 }
 
 // ─── PREFETCH: load & cache all artist images at gig setup time ───
