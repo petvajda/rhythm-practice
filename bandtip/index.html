@@ -1,1 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>BandTip — Song Request Kiosk</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13121a;
+    --surface2: #1e1c28;
+    --border: #252330;
+    --accent: #e8ff47;
+    --accent2: #ff4f9b;
+    --text: #f2efff;
+    --muted: #6b6585;
+    --radius: 14px;
+  }
 
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { width:100%; height:100%; background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; overflow:hidden; user-select:none; }
+
+  .screen { position:absolute; inset:0; display:flex; flex-direction:column; opacity:0; pointer-events:none; transition:opacity 0.28s ease; }
+  .screen.active { opacity:1; pointer-events:all; }
+
+  /* ══ ATTRACT ══ */
+  #screen-attract {
+    align-items:center; justify-content:center; cursor:pointer; overflow:hidden;
+    background: radial-gradient(ellipse 100% 80% at 50% 120%, #1a1500 0%, var(--bg) 60%);
+  }
+  .attract-orb {
+    position:absolute; border-radius:50%; filter:blur(80px); pointer-events:none;
+  }
+  .orb1 { width:500px; height:500px; background:rgba(232,255,71,0.09); top:-100px; left:-100px; animation:drift1 8s ease-in-out infinite alternate; }
+  .orb2 { width:400px; height:400px; background:rgba(255,79,155,0.1); bottom:-80px; right:-60px; animation:drift2 10s ease-in-out infinite alternate; }
+  @keyframes drift1 { from{transform:translate(0,0)} to{transform:translate(60px,40px)} }
+  @keyframes drift2 { from{transform:translate(0,0)} to{transform:translate(-50px,-30px)} }
+
+  .attract-ticker {
+    position:absolute; top:0; left:0; right:0; overflow:hidden;
+    height:48px; background:var(--accent); display:flex; align-items:center;
+  }
+  .ticker-inner {
+    display:flex; gap:0; white-space:nowrap;
+    animation:ticker 90s linear infinite;
+  }
+  .ticker-item {
+    font-size:15px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase;
+    color:#0a0a0f; padding:0 36px;
+  }
+  .ticker-sep { color: rgba(10,10,15,0.35); }
+  @keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+  .attract-content { position:relative; z-index:2; text-align:center; padding:0 40px; }
+  .attract-label {
+    display:inline-block; font-size:11px; font-weight:600; letter-spacing:0.22em;
+    text-transform:uppercase; color:var(--accent); margin-bottom:24px;
+    border:1px solid rgba(232,255,71,0.3); padding:5px 16px; border-radius:100px;
+  }
+  .attract-headline {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:clamp(80px,15vw,130px);
+    line-height:0.86; letter-spacing:0.02em; color:var(--text);
+    margin-bottom:12px;
+  }
+  .attract-headline em { color:var(--accent); font-style:normal; }
+  .attract-sub {
+    font-family:'Instrument Serif',serif; font-style:italic;
+    font-size:clamp(18px,2.2vw,22px); color:var(--muted); margin-bottom:48px;
+  }
+  .attract-btn {
+    display:inline-flex; align-items:center; gap:12px;
+    background:var(--accent); color:#0a0a0f; font-weight:600; font-size:16px;
+    letter-spacing:0.04em; padding:18px 48px; border-radius:100px; border:none;
+    cursor:pointer; animation:btn-pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes btn-pulse {
+    0%,100%{box-shadow:0 0 0 0 rgba(232,255,71,0.5)}
+    50%{box-shadow:0 0 0 20px rgba(232,255,71,0)}
+  }
+  .attract-footer {
+    position:absolute; bottom:28px; font-size:12px; letter-spacing:0.1em;
+    text-transform:uppercase; color:var(--muted);
+  }
+
+  /* ══ SHARED HEADER ══ */
+  .app-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 24px; border-bottom:1px solid var(--border); flex-shrink:0;
+    background:rgba(10,10,15,0.9); backdrop-filter:blur(16px);
+    position:relative; z-index:10;
+  }
+  .logo { font-family:'Bebas Neue',sans-serif; font-size:24px; letter-spacing:0.07em; }
+  .logo em { color:var(--accent); font-style:normal; }
+  .ghost-btn {
+    background:var(--surface); border:1px solid var(--border); color:var(--muted);
+    font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500;
+    padding:8px 18px; border-radius:100px; cursor:pointer; transition:all 0.2s;
+    display:flex; align-items:center; gap:6px;
+  }
+  .ghost-btn:hover { border-color:var(--text); color:var(--text); }
+
+  /* ══ SETLIST SCREEN ══ */
+  #screen-setlist { background:var(--bg); }
+
+  .search-bar-wrap {
+    padding:14px 24px 10px; flex-shrink:0;
+    border-bottom:1px solid var(--border);
+    background:var(--bg);
+  }
+  .search-bar {
+    display:flex; align-items:center; gap:10px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:0 16px; transition:border-color 0.2s;
+  }
+  .search-bar:focus-within { border-color:rgba(232,255,71,0.5); }
+  .search-icon { color:var(--muted); font-size:16px; flex-shrink:0; }
+  .search-input {
+    flex:1; background:none; border:none; outline:none;
+    font-family:'DM Sans',sans-serif; font-size:15px; color:var(--text);
+    padding:14px 0;
+  }
+  .search-input::placeholder { color:var(--muted); }
+  .search-clear {
+    background:var(--surface2); border:none; color:var(--muted);
+    width:24px; height:24px; border-radius:50%; cursor:pointer;
+    font-size:13px; display:flex; align-items:center; justify-content:center;
+    transition:all 0.2s; flex-shrink:0;
+  }
+  .search-clear:hover { background:var(--border); color:var(--text); }
+  .search-clear.hidden { opacity:0; pointer-events:none; }
+
+  .list-meta {
+    padding:10px 24px 6px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .list-meta-count { font-size:12px; color:var(--muted); letter-spacing:0.06em; text-transform:uppercase; }
+  .list-meta-hint { font-family:'Instrument Serif',serif; font-style:italic; font-size:13px; color:var(--muted); }
+
+  .songs-list { overflow-y:auto; flex:1; padding:4px 24px 32px; }
+  .songs-list::-webkit-scrollbar { width:3px; }
+  .songs-list::-webkit-scrollbar-track { background:transparent; }
+  .songs-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+  /* Song row — list layout */
+  .song-row {
+    display:flex; align-items:center; gap:16px;
+    padding:10px 14px; border-radius:var(--radius);
+    cursor:pointer; transition:all 0.16s ease;
+    border:1px solid transparent; margin-bottom:4px;
+  }
+  .song-row:hover { background:var(--surface); border-color:var(--border); }
+  .song-row:hover .song-row-arrow { opacity:1; transform:translateX(0); }
+  .song-row:active { transform:scale(0.99); }
+  .song-row.requested { opacity:0.38; cursor:default; pointer-events:none; }
+
+  .song-thumb {
+    width:52px; height:52px; border-radius:10px; flex-shrink:0;
+    background:var(--surface2); overflow:hidden; position:relative;
+    border:1px solid var(--border);
+  }
+  .song-thumb img {
+    width:100%; height:100%; object-fit:cover;
+    transition:opacity 0.3s;
+  }
+  .song-thumb-placeholder {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:22px;
+  }
+  .song-thumb-placeholder.hidden { display:none; }
+
+  .song-info { flex:1; min-width:0; }
+  .song-row-title {
+    font-size:15px; font-weight:600; color:var(--text);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .song-row-artist {
+    font-family:'Instrument Serif',serif; font-style:italic;
+    font-size:13px; color:var(--muted); margin-top:2px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .requested-pill {
+    background:rgba(232,255,71,0.1); border:1px solid rgba(232,255,71,0.25);
+    color:var(--accent); font-size:10px; font-weight:600; letter-spacing:0.1em;
+    text-transform:uppercase; padding:3px 10px; border-radius:100px; flex-shrink:0;
+  }
+  .song-row-arrow {
+    color:var(--muted); font-size:20px; flex-shrink:0;
+    opacity:0; transform:translateX(-4px); transition:all 0.16s;
+  }
+
+  .no-results {
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    padding:60px 32px; text-align:center; gap:12px;
+  }
+  .no-results.visible { display:flex; }
+  .no-results-icon { font-size:40px; }
+  .no-results-title { font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:0.05em; color:var(--muted); }
+  .no-results-sub { font-size:14px; color:var(--muted); }
+
+  /* ══ DONATION ══ */
+  #screen-donation { background:var(--bg); }
+  .donation-inner { flex:1; display:flex; align-items:center; justify-content:center; overflow-y:auto; padding:24px; }
+  .donation-card {
+    width:100%; max-width:480px; background:var(--surface);
+    border:1px solid var(--border); border-radius:20px; padding:28px;
+  }
+
+  .selected-song-block {
+    display:flex; align-items:center; gap:16px; margin-bottom:28px;
+    background:var(--surface2); border-radius:12px; padding:14px 16px;
+  }
+  .selected-thumb {
+    width:60px; height:60px; border-radius:10px; flex-shrink:0;
+    background:var(--bg); overflow:hidden; border:1px solid var(--border); position:relative;
+  }
+  .selected-thumb img { width:100%; height:100%; object-fit:cover; }
+  .selected-thumb-placeholder { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:26px; }
+  .selected-title { font-size:16px; font-weight:600; color:var(--text); line-height:1.25; }
+  .selected-artist { font-family:'Instrument Serif',serif; font-style:italic; font-size:13px; color:var(--muted); margin-top:3px; }
+
+  .tip-label {
+    font-size:11px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:10px;
+  }
+  .tip-amount {
+    font-family:'Bebas Neue',sans-serif; font-size:80px; line-height:1;
+    color:var(--text); letter-spacing:0.02em; margin-bottom:4px;
+  }
+  .tip-amount sup { font-size:40px; color:var(--accent); vertical-align:super; }
+  .tip-min { font-size:12px; color:var(--muted); margin-bottom:20px; }
+
+  .presets { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
+  .preset {
+    background:var(--surface2); border:1px solid var(--border); color:var(--text);
+    font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600;
+    padding:14px 6px; border-radius:10px; cursor:pointer; transition:all 0.16s; text-align:center;
+  }
+  .preset:hover, .preset.on { background:var(--accent); border-color:var(--accent); color:#0a0a0f; }
+  .preset:active { transform:scale(0.95); }
+
+  .stepper { display:flex; align-items:center; gap:12px; margin-bottom:24px; }
+  .step-btn {
+    width:44px; height:44px; border-radius:50%; background:var(--surface2);
+    border:1px solid var(--border); color:var(--text); font-size:20px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:all 0.16s; flex-shrink:0;
+  }
+  .step-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .step-btn:active { transform:scale(0.9); }
+  .step-track { flex:1; height:3px; background:var(--border); border-radius:2px; }
+  .step-fill { height:100%; background:var(--accent); border-radius:2px; width:10%; transition:width 0.2s; }
+
+  .pay-btn {
+    width:100%; background:var(--accent); color:#0a0a0f;
+    font-family:'DM Sans',sans-serif; font-weight:600; font-size:16px;
+    padding:18px; border-radius:100px; border:none; cursor:pointer;
+    transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:10px;
+  }
+  .pay-btn:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(232,255,71,0.2); }
+  .pay-btn:active { transform:scale(0.98); }
+
+  /* ══ PAYMENT ══ */
+  #screen-payment { background:var(--bg); }
+  .payment-inner { flex:1; display:flex; align-items:center; justify-content:center; }
+  .payment-card { text-align:center; max-width:400px; padding:0 28px; display:flex; flex-direction:column; align-items:center; }
+  .pay-badge {
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:10px 22px; margin-bottom:36px; font-size:14px; color:var(--muted);
+  }
+  .pay-badge strong { color:var(--accent); font-size:17px; }
+  .tap-anim { width:150px; height:150px; position:relative; display:flex; align-items:center; justify-content:center; margin-bottom:32px; }
+  .tap-ring1, .tap-ring2 {
+    position:absolute; inset:0; border-radius:50%;
+    border:2px solid rgba(232,255,71,0.6); animation:ring-out 2s ease-out infinite;
+  }
+  .tap-ring2 { animation-delay:0.65s; }
+  @keyframes ring-out { 0%{transform:scale(0.8);opacity:0.8} 100%{transform:scale(1.45);opacity:0} }
+  .tap-core {
+    width:108px; height:108px; border-radius:50%;
+    background:var(--surface); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center; font-size:48px; z-index:1;
+  }
+  .pay-title { font-family:'Bebas Neue',sans-serif; font-size:38px; letter-spacing:0.05em; margin-bottom:8px; }
+  .pay-sub { color:var(--muted); font-size:14px; line-height:1.65; margin-bottom:28px; }
+  .pay-types { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:28px; }
+  .pay-type { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:7px 14px; font-size:12px; color:var(--muted); }
+  .timer-bar { width:100%; height:3px; background:var(--surface2); border-radius:2px; overflow:hidden; }
+  .timer-fill { height:100%; background:var(--accent); border-radius:2px; animation:timer 30s linear forwards; }
+  @keyframes timer { from{width:100%} to{width:0%} }
+  .timer-note { font-size:11px; color:var(--muted); margin-top:8px; letter-spacing:0.05em; }
+  .sim-btn {
+    margin-top:28px; background:none; border:1px solid var(--border); color:var(--muted);
+    padding:9px 22px; border-radius:100px; cursor:pointer; font-size:13px;
+    font-family:'DM Sans',sans-serif; transition:all 0.2s;
+  }
+  .sim-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* ══ PENDING ══ */
+  #screen-pending { background:var(--bg); }
+  .pending-inner { flex:1; display:flex; align-items:center; justify-content:center; }
+  .pending-card { text-align:center; max-width:440px; padding:0 28px; display:flex; flex-direction:column; align-items:center; }
+  .spin-ring {
+    width:80px; height:80px; border-radius:50%;
+    border:3px solid var(--surface2); border-top-color:var(--accent);
+    animation:spin 0.9s linear infinite; margin-bottom:24px;
+  }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .pending-title { font-family:'Bebas Neue',sans-serif; font-size:42px; letter-spacing:0.04em; margin-bottom:8px; }
+  .pending-sub { color:var(--muted); font-size:14px; line-height:1.65; margin-bottom:22px; }
+  .pending-song-pill {
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:14px 22px; font-size:15px; font-weight:600; width:100%; margin-bottom:8px;
+  }
+  .pending-confirm { font-size:13px; color:var(--muted); }
+  .pending-confirm strong { color:var(--text); }
+  .demo-row { display:flex; gap:10px; margin-top:28px; flex-wrap:wrap; justify-content:center; }
+  .demo-approve {
+    background:rgba(232,255,71,0.1); border:1px solid var(--accent); color:var(--accent);
+    padding:9px 22px; border-radius:100px; cursor:pointer; font-size:13px;
+    font-family:'DM Sans',sans-serif; transition:all 0.2s;
+  }
+  .demo-approve:hover { background:rgba(232,255,71,0.18); }
+  .demo-decline {
+    background:rgba(255,79,155,0.1); border:1px solid var(--accent2); color:var(--accent2);
+    padding:9px 22px; border-radius:100px; cursor:pointer; font-size:13px;
+    font-family:'DM Sans',sans-serif; transition:all 0.2s;
+  }
+  .demo-decline:hover { background:rgba(255,79,155,0.18); }
+
+  /* ══ SUCCESS ══ */
+  #screen-success { background:var(--bg); overflow:hidden; }
+  .success-glow {
+    position:absolute; inset:0;
+    background:radial-gradient(ellipse 55% 45% at 50% 58%, rgba(232,255,71,0.11) 0%, transparent 70%);
+    animation:glow-bloom 0.9s ease-out forwards;
+  }
+  @keyframes glow-bloom { from{opacity:0;transform:scale(0.7)} to{opacity:1;transform:scale(1)} }
+  .success-inner { flex:1; display:flex; align-items:center; justify-content:center; position:relative; z-index:1; }
+  .success-card { text-align:center; max-width:440px; padding:0 28px; display:flex; flex-direction:column; align-items:center; }
+  .success-thumb {
+    width:90px; height:90px; border-radius:50%; margin-bottom:20px;
+    background:var(--surface); border:3px solid var(--accent);
+    overflow:hidden; position:relative;
+    animation:pop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  }
+  @keyframes pop { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+  .success-thumb img { width:100%; height:100%; object-fit:cover; }
+  .success-thumb-ph { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:36px; }
+  .success-big { font-family:'Bebas Neue',sans-serif; font-size:50px; letter-spacing:0.04em; color:var(--accent); margin-bottom:6px; }
+  .success-song-title { font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:0.03em; margin-bottom:4px; }
+  .success-song-artist { font-family:'Instrument Serif',serif; font-style:italic; font-size:17px; color:var(--muted); margin-bottom:22px; }
+  .success-note {
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:14px 20px; font-size:14px; color:var(--muted); line-height:1.6; margin-bottom:22px; width:100%;
+  }
+  .success-note strong { color:var(--text); }
+  .success-cd { font-size:12px; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; }
+  .success-cd span { color:var(--accent); font-weight:600; }
+
+  /* ══ DECLINED ══ */
+  #screen-declined { background:var(--bg); }
+  .declined-inner { flex:1; display:flex; align-items:center; justify-content:center; }
+  .declined-card { text-align:center; max-width:420px; padding:0 28px; display:flex; flex-direction:column; align-items:center; gap:0; }
+  .declined-icon { font-size:52px; margin-bottom:18px; }
+  .declined-title { font-family:'Bebas Neue',sans-serif; font-size:42px; letter-spacing:0.04em; color:var(--accent2); margin-bottom:8px; }
+  .declined-sub { color:var(--muted); font-size:14px; line-height:1.65; margin-bottom:28px; }
+  .try-again-btn {
+    background:var(--surface); border:1px solid var(--border); color:var(--text);
+    font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600;
+    padding:15px 36px; border-radius:100px; cursor:pointer; transition:all 0.2s;
+  }
+  .try-again-btn:hover { border-color:var(--accent); background:var(--surface2); }
+</style>
+</head>
+<body>
+
+<!-- ══ ATTRACT ══ -->
+<div id="screen-attract" class="screen active" onclick="goTo('setlist')">
+  <div class="attract-orb orb1"></div>
+  <div class="attract-orb orb2"></div>
+  <div class="attract-ticker">
+    <div class="ticker-inner" id="ticker"></div>
+  </div>
+  <div class="attract-content">
+    <div class="attract-label">Dance Floor Revival · Live Tonight</div>
+    <div class="attract-headline" onclick="event.stopPropagation();handleLogoTap()">REQUEST<br><em>A SONG</em></div>
+    <div class="attract-sub">Browse the setlist &amp; tip the band</div>
+    <button class="attract-btn">🎵 &nbsp;See the Songs</button>
+  </div>
+  <div class="attract-footer">Tap anywhere to start</div>
+</div>
+
+<!-- ══ SETLIST ══ -->
+<div id="screen-setlist" class="screen">
+  <div class="app-header">
+    <button class="ghost-btn" onclick="goTo('attract')">✕&nbsp; Cancel</button>
+    <div class="logo" onclick="handleLogoTap()">Band<em>Tip</em></div>
+    <div style="width:88px"></div>
+  </div>
+
+  <div class="search-bar-wrap">
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input
+        class="search-input"
+        id="search-input"
+        type="text"
+        placeholder="Search by song or artist…"
+        oninput="handleSearch(this.value)"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+      >
+      <button class="search-clear hidden" id="search-clear" onclick="clearSearch()">✕</button>
+    </div>
+  </div>
+
+  <div class="list-meta">
+    <div class="list-meta-count" id="list-count">44 songs</div>
+    <div class="list-meta-hint">Tap a song to request it</div>
+  </div>
+
+  <div class="songs-list" id="songs-list"></div>
+  <div class="no-results" id="no-results">
+    <div class="no-results-icon">🎵</div>
+    <div class="no-results-title">No songs found</div>
+    <div class="no-results-sub">Try a different title or artist name</div>
+  </div>
+</div>
+
+<!-- ══ DONATION ══ -->
+<div id="screen-donation" class="screen">
+  <div class="app-header">
+    <button class="ghost-btn" onclick="goTo('setlist')">← Back</button>
+    <div class="logo">Band<em>Tip</em></div>
+    <div style="width:88px"></div>
+  </div>
+  <div class="donation-inner">
+    <div class="donation-card">
+      <div class="selected-song-block">
+        <div class="selected-thumb">
+          <div class="selected-thumb-placeholder" id="sel-thumb-ph">🎵</div>
+          <img id="sel-thumb-img" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';document.getElementById('sel-thumb-ph').style.display='flex'">
+        </div>
+        <div>
+          <div class="selected-title" id="sel-title">—</div>
+          <div class="selected-artist" id="sel-artist">—</div>
+        </div>
+      </div>
+
+      <div class="tip-label">Choose your tip</div>
+      <div class="tip-amount"><sup>£</sup><span id="tip-val">2</span></div>
+      <div class="tip-min">Minimum £2 · increase with presets or + / −</div>
+
+      <div class="presets">
+        <button class="preset on" onclick="setTip(2,this)">£2</button>
+        <button class="preset" onclick="setTip(5,this)">£5</button>
+        <button class="preset" onclick="setTip(10,this)">£10</button>
+        <button class="preset" onclick="setTip(20,this)">£20</button>
+      </div>
+
+      <div class="stepper">
+        <button class="step-btn" onclick="nudgeTip(-1)">−</button>
+        <div class="step-track"><div class="step-fill" id="step-fill"></div></div>
+        <button class="step-btn" onclick="nudgeTip(1)">+</button>
+      </div>
+
+      <button class="pay-btn" id="pay-btn">
+        💳 &nbsp;Pay <span id="pay-label">£2</span> &amp; Request
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAYMENT ══ -->
+<div id="screen-payment" class="screen">
+  <div class="app-header">
+    <button class="ghost-btn" onclick="goTo('donation')">← Back</button>
+    <div class="logo">Band<em>Tip</em></div>
+    <div style="width:88px"></div>
+  </div>
+  <div class="payment-inner">
+    <div class="payment-card">
+      <div class="pay-badge">
+        Paying <strong id="pay-amt-display">£2</strong> for
+        <span id="pay-song-display" style="color:var(--text);font-weight:600">—</span>
+      </div>
+      <div class="tap-anim">
+        <div class="tap-ring1"></div>
+        <div class="tap-ring2"></div>
+        <div class="tap-core">💳</div>
+      </div>
+      <div class="pay-title">Tap Your Card</div>
+      <div class="pay-sub">Hold your card or phone<br>against the reader below</div>
+      <div class="pay-types">
+        <div class="pay-type">💳 Chip &amp; Pin</div>
+        <div class="pay-type">⚡ Contactless</div>
+        <div class="pay-type"> Apple Pay</div>
+        <div class="pay-type"> Google Pay</div>
+      </div>
+      <div class="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>
+      <div class="timer-note">Session expires in 30 seconds</div>
+      <button class="sim-btn" onclick="simulatePay()">⚡ Simulate payment (demo)</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PENDING ══ -->
+<div id="screen-pending" class="screen">
+  <div class="app-header">
+    <div style="width:88px"></div>
+    <div class="logo">Band<em>Tip</em></div>
+    <div style="width:88px"></div>
+  </div>
+  <div class="pending-inner">
+    <div class="pending-card">
+      <div class="spin-ring"></div>
+      <div class="pending-title">Waiting for the band…</div>
+      <div class="pending-sub">Your tip is confirmed. The band leader is<br>reviewing your request — hang tight 🎸</div>
+      <div class="pending-song-pill" id="pending-song">—</div>
+      <div class="pending-confirm">Payment of <strong id="pending-amt">£2</strong> confirmed ✓</div>
+      <div class="demo-row">
+        <button class="demo-approve" onclick="doApprove()">✓ Approve (demo)</button>
+        <button class="demo-decline" onclick="doDecline()">✕ Decline &amp; Refund (demo)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SUCCESS ══ -->
+<div id="screen-success" class="screen">
+  <div class="success-glow"></div>
+  <div class="app-header" style="position:relative;z-index:1">
+    <div style="width:88px"></div>
+    <div class="logo">Band<em>Tip</em></div>
+    <div style="width:88px"></div>
+  </div>
+  <div class="success-inner">
+    <div class="success-card">
+      <div class="success-thumb">
+        <div class="success-thumb-ph" id="suc-thumb-ph">🎵</div>
+        <img id="suc-thumb-img" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';document.getElementById('suc-thumb-ph').style.display='flex'">
+      </div>
+      <div class="success-big">You're on the list!</div>
+      <div class="success-song-title" id="suc-title">—</div>
+      <div class="success-song-artist" id="suc-artist">—</div>
+      <div class="success-note">
+        <strong>The band has been notified.</strong><br>
+        They'll do their best to fit it in — thanks for the tip! 🙌
+      </div>
+      <div class="success-cd">Returning to menu in <span id="cd-num">8</span>s</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DECLINED ══ -->
+<div id="screen-declined" class="screen">
+  <div class="app-header">
+    <div style="width:88px"></div>
+    <div class="logo">Band<em>Tip</em></div>
+    <div style="width:88px"></div>
+  </div>
+  <div class="declined-inner">
+    <div class="declined-card">
+      <div class="declined-icon">😔</div>
+      <div class="declined-title">Not Tonight</div>
+      <div class="declined-sub">
+        Sorry — the band can't play that one tonight.<br>
+        Your payment has been <strong style="color:var(--text)">fully refunded</strong>.
+      </div>
+      <button class="try-again-btn" onclick="goTo('setlist')">Pick Another Song →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── SONG DATA (all from Master setlist, deduped, alphabetical) ───
+const allSongs = [
+  { slug:"aint-no-mountain",            title:"Ain't No Mountain High Enough",       artist:"Marvin Gaye & Tammi Terrell" },
+  { slug:"aint-nobody",                 title:"Ain't Nobody",                         artist:"Chaka Khan" },
+  { slug:"bad-girls",                   title:"Bad Girls",                            artist:"Donna Summer" },
+  { slug:"cant-fight-moonlight",        title:"Can't Fight The Moonlight",            artist:"LeAnn Rimes" },
+  { slug:"car-wash",                    title:"Car Wash",                             artist:"Rose Royce" },
+  { slug:"chelsea-dagger",              title:"Chelsea Dagger",                       artist:"The Fratellis" },
+  { slug:"cosmic-girl",                 title:"Cosmic Girl",                          artist:"Jamiroquai" },
+  { slug:"dont-start-now",              title:"Don't Start Now",                      artist:"Dua Lipa" },
+  { slug:"finally",                     title:"Finally",                              artist:"CeCe Peniston" },
+  { slug:"forget-you",                  title:"Forget You",                           artist:"CeeLo Green" },
+  { slug:"free-from-desire",            title:"Free From Desire",                     artist:"Gala" },
+  { slug:"get-lucky",                   title:"Get Lucky",                            artist:"Daft Punk ft. Pharrell Williams" },
+  { slug:"gimme-gimme-gimme",           title:"Gimme! Gimme! Gimme!",                 artist:"ABBA" },
+  { slug:"greatest-dancer",             title:"The Greatest Dancer",                  artist:"Sister Sledge" },
+  { slug:"hot-stuff",                   title:"Hot Stuff",                            artist:"Donna Summer" },
+  { slug:"i-am-coming-out",             title:"I'm Coming Out",                       artist:"Diana Ross" },
+  { slug:"i-wanna-dance-with-somebody", title:"I Wanna Dance with Somebody",          artist:"Whitney Houston" },
+  { slug:"i-will-survive",              title:"I Will Survive",                       artist:"Gloria Gaynor" },
+  { slug:"i-wish-superstition",         title:"I Wish / Superstition",                artist:"Stevie Wonder" },
+  { slug:"lady-marmalade",              title:"Lady Marmalade",                       artist:"LaBelle" },
+  { slug:"love-foolosophy",             title:"Love Foolosophy",                      artist:"Jamiroquai" },
+  { slug:"love-shack",                  title:"Love Shack",                           artist:"The B-52's" },
+  { slug:"man-i-feel-like-a-woman",     title:"Man! I Feel Like A Woman!",            artist:"Shania Twain" },
+  { slug:"mr-brightside",               title:"Mr. Brightside",                       artist:"The Killers" },
+  { slug:"murder-on-the-dancefloor",    title:"Murder On The Dancefloor",             artist:"Sophie Ellis-Bextor" },
+  { slug:"never-too-much",              title:"Never Too Much",                       artist:"Luther Vandross" },
+  { slug:"pink-pony-club",              title:"Pink Pony Club",                       artist:"Chappell Roan" },
+  { slug:"funky-music",                 title:"Play That Funky Music",                 artist:"Wild Cherry" },
+  { slug:"proud-mary",                  title:"Proud Mary",                           artist:"Tina Turner" },
+  { slug:"sex-on-fire",                 title:"Sex On Fire",                          artist:"Kings of Leon" },
+  { slug:"shes-so-lovely",              title:"She's So Lovely",                      artist:"Scouting for Girls" },
+  { slug:"shut-up-and-dance",           title:"Shut Up And Dance",                    artist:"Walk the Moon" },
+  { slug:"signed-sealed-delivered",     title:"Signed, Sealed, Delivered I'm Yours",  artist:"Stevie Wonder" },
+  { slug:"simply-the-best",             title:"Simply The Best",                      artist:"Tina Turner" },
+  { slug:"sing-it-back",                title:"Sing It Back",                         artist:"Moloko" },
+  { slug:"somebody-elses-guy",          title:"Somebody Else's Guy",                  artist:"Jocelyn Brown" },
+  { slug:"summer-of-69",                title:"Summer of '69",                        artist:"Bryan Adams" },
+  { slug:"teenage-dirtbag",             title:"Teenage Dirtbag",                      artist:"Wheatus" },
+  { slug:"this-love",                   title:"This Love",                            artist:"Maroon 5" },
+  { slug:"treasure",                    title:"Treasure",                             artist:"Bruno Mars" },
+  { slug:"upside-down",                 title:"Upside Down",                          artist:"Diana Ross" },
+  { slug:"valerie",                     title:"Valerie",                              artist:"Amy Winehouse" },
+  { slug:"we-are-family",               title:"We Are Family",                        artist:"Sister Sledge" },
+  { slug:"young-hearts-run-free",       title:"Young Hearts Run Free",                artist:"Candi Staton" },
+].sort((a,b) => a.title.localeCompare(b.title));
+
+// ─── ARTIST THUMBNAIL CACHE ───
+// Uses Last.fm API-style artist image lookup via MusicBrainz + Cover Art Archive
+// Fallback: colorful initials avatar generated inline
+const thumbCache = {};
+
+// Generate a colorful gradient placeholder from artist initials
+function makeAvatar(artist) {
+  const colors = [
+    ['#e8ff47','#0a0a0f'], ['#ff4f9b','#fff'], ['#00d4ff','#0a0a0f'],
+    ['#ff7b47','#fff'],    ['#a855f7','#fff'], ['#22d3ee','#0a0a0f'],
+    ['#fb923c','#fff'],    ['#4ade80','#0a0a0f'], ['#f472b6','#fff'],
+  ];
+  let hash = 0;
+  for (let c of artist) hash = (hash * 31 + c.charCodeAt(0)) & 0xffff;
+  const [bg, fg] = colors[hash % colors.length];
+  const initials = artist.split(/\s+/).slice(0,2).map(w => w[0]?.toUpperCase() || '').join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52">
+    <rect width="52" height="52" rx="10" fill="${bg}"/>
+    <text x="26" y="34" font-family="sans-serif" font-weight="700" font-size="18" fill="${fg}" text-anchor="middle">${initials}</text>
+  </svg>`;
+  return 'data:image/svg+xml;base64,' + btoa(svg);
+}
+
+// Fetch artist image from MusicBrainz → Cover Art Archive pipeline
+// Falls back gracefully to the initials avatar
+async function getArtistThumb(artist) {
+  if (thumbCache[artist]) return thumbCache[artist];
+  const fallback = makeAvatar(artist);
+  thumbCache[artist] = fallback; // set fallback immediately
+  try {
+    const q = encodeURIComponent(artist.split(' ft.')[0].split(' &')[0].trim());
+    const mbRes = await fetch(
+      `https://musicbrainz.org/ws/2/artist/?query=artist:${q}&limit=1&fmt=json`,
+      { headers: { 'User-Agent': 'BandTipKiosk/1.0 (demo)' } }
+    );
+    if (!mbRes.ok) return fallback;
+    const mbData = await mbRes.json();
+    const mbid = mbData.artists?.[0]?.id;
+    if (!mbid) return fallback;
+    // Use fanart.tv-style or Wikipedia thumbnail via Wikidata
+    const wikidataId = mbData.artists?.[0]?.relations?.find?.(r => r.type === 'wikidata')?.url?.resource?.split('/')?.pop();
+    if (wikidataId) {
+      const wdRes = await fetch(`https://www.wikidata.org/wiki/Special:EntityData/${wikidataId}.json`);
+      const wdData = await wdRes.json();
+      const entity = wdData.entities?.[wikidataId];
+      const imgName = entity?.claims?.P18?.[0]?.mainsnak?.datavalue?.value;
+      if (imgName) {
+        const encoded = encodeURIComponent(imgName.replace(/ /g,'_'));
+        const url = `https://commons.wikimedia.org/wiki/Special:FilePath/${encoded}?width=80`;
+        thumbCache[artist] = url;
+        return url;
+      }
+    }
+  } catch(e) { /* network unavailable — stays as avatar */ }
+  return fallback;
+}
+
+// ─── PREFETCH: load & cache all artist images at gig setup time ───
+// Called from the admin panel (or manually via prefetchAllThumbs()).
+// Results are persisted in localStorage so they survive app restarts
+// and are available fully offline during the show.
+
+const CACHE_KEY = 'bandtip_thumb_cache_v1';
+
+function loadPersistedCache() {
+  try {
+    const saved = localStorage.getItem(CACHE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      Object.assign(thumbCache, parsed);
+    }
+  } catch(e) {}
+}
+
+function persistCache() {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(thumbCache)); } catch(e) {}
+}
+
+// Pre-fetch every unique artist, throttled to respect MusicBrainz rate limit (1 req/sec).
+// Returns a promise that resolves when all artists are done.
+// onProgress(done, total) is called after each artist completes.
+async function prefetchAllThumbs(onProgress) {
+  const artists = [...new Set(allSongs.map(s => s.artist))];
+  const total = artists.length;
+  let done = 0;
+
+  for (const artist of artists) {
+    // Skip if already cached with a real image (not just a fallback avatar)
+    if (thumbCache[artist] && !thumbCache[artist].startsWith('data:image/svg')) {
+      done++;
+      onProgress && onProgress(done, total, artist, true);
+      continue;
+    }
+    await getArtistThumb(artist); // fetches + populates thumbCache[artist]
+    done++;
+    onProgress && onProgress(done, total, artist, false);
+    persistCache(); // save after each one so partial progress survives a crash
+    // Rate-limit: MusicBrainz asks for max 1 req/sec
+    await new Promise(r => setTimeout(r, 1100));
+  }
+  persistCache();
+}
+
+// ─── ADMIN PREFETCH PANEL (floating, PIN-protected, for band setup use) ───
+// Shows a progress bar and status. In production this lives in a separate admin view;
+// here it's accessible via a hidden long-press on the logo for demo purposes.
+
+let adminTapCount = 0;
+let adminTapTimer = null;
+
+function handleLogoTap() {
+  adminTapCount++;
+  clearTimeout(adminTapTimer);
+  adminTapTimer = setTimeout(() => { adminTapCount = 0; }, 1500);
+  if (adminTapCount >= 5) {
+    adminTapCount = 0;
+    showPrefetchPanel();
+  }
+}
+
+function showPrefetchPanel() {
+  const existing = document.getElementById('prefetch-panel');
+  if (existing) { existing.remove(); return; }
+
+  const panel = document.createElement('div');
+  panel.id = 'prefetch-panel';
+  panel.style.cssText = `
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background:#1e1c28; border:1px solid #e8ff47; border-radius:16px;
+    padding:20px 24px; width:380px; z-index:9999; font-family:'DM Sans',sans-serif;
+    box-shadow:0 20px 60px rgba(0,0,0,0.6);
+  `;
+
+  const artists = [...new Set(allSongs.map(s => s.artist))];
+  const cachedCount = artists.filter(a => thumbCache[a] && !thumbCache[a].startsWith('data:image/svg')).length;
+
+  panel.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.05em;color:#f2efff;">
+        🖼 Pre-fetch Artist Images
+      </div>
+      <button onclick="document.getElementById('prefetch-panel').remove()"
+        style="background:none;border:none;color:#6b6585;font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    <div style="font-size:13px;color:#6b6585;margin-bottom:14px;line-height:1.5;">
+      Downloads all artist thumbnails now so they work <strong style="color:#f2efff">offline during the show</strong>.
+      Needs WiFi. Takes ~${Math.ceil(artists.length * 1.1 / 60)} min.
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:#6b6585;margin-bottom:8px;">
+      <span id="pf-status">${cachedCount} / ${artists.length} artists cached</span>
+      <span id="pf-artist" style="color:#e8ff47;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+    </div>
+    <div style="height:6px;background:#252330;border-radius:3px;overflow:hidden;margin-bottom:16px;">
+      <div id="pf-bar" style="height:100%;background:#e8ff47;border-radius:3px;transition:width 0.4s;width:${Math.round(cachedCount/artists.length*100)}%;"></div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button id="pf-btn" onclick="runPrefetch()"
+        style="flex:1;background:#e8ff47;color:#0a0a0f;border:none;padding:12px;border-radius:100px;font-weight:600;font-size:14px;cursor:pointer;">
+        ⚡ Start Pre-fetch
+      </button>
+      <button onclick="clearThumbCache()"
+        style="background:#13121a;border:1px solid #252330;color:#6b6585;padding:12px 16px;border-radius:100px;font-size:13px;cursor:pointer;">
+        Clear
+      </button>
+    </div>
+  `;
+  document.body.appendChild(panel);
+}
+
+let prefetching = false;
+
+async function runPrefetch() {
+  if (prefetching) return;
+  prefetching = true;
+  const btn = document.getElementById('pf-btn');
+  if (btn) { btn.textContent = '⏳ Fetching…'; btn.style.opacity = '0.7'; btn.disabled = true; }
+
+  const artists = [...new Set(allSongs.map(s => s.artist))];
+
+  await prefetchAllThumbs((done, total, artist, wasSkipped) => {
+    const pct = Math.round(done / total * 100);
+    const bar = document.getElementById('pf-bar');
+    const status = document.getElementById('pf-status');
+    const artistEl = document.getElementById('pf-artist');
+    if (bar) bar.style.width = pct + '%';
+    if (status) status.textContent = `${done} / ${total} artists cached`;
+    if (artistEl) artistEl.textContent = wasSkipped ? '' : artist;
+  });
+
+  prefetching = false;
+  const btn2 = document.getElementById('pf-btn');
+  if (btn2) { btn2.textContent = '✓ Done — all images cached'; btn2.style.background = '#4ade80'; btn2.style.opacity = '1'; }
+  renderList(); // re-render list to show newly loaded images
+}
+
+function clearThumbCache() {
+  Object.keys(thumbCache).forEach(k => delete thumbCache[k]);
+  try { localStorage.removeItem(CACHE_KEY); } catch(e) {}
+  const status = document.getElementById('pf-status');
+  const bar = document.getElementById('pf-bar');
+  if (status) status.textContent = `0 / ${[...new Set(allSongs.map(s=>s.artist))].length} artists cached`;
+  if (bar) bar.style.width = '0%';
+  renderList();
+}
+
+// ─── STATE ───
+let selected = null;
+let tipAmount = 2;
+let requested = new Set();
+let cdInterval = null;
+let currentQuery = '';
+
+// Load any previously persisted thumbnails immediately
+loadPersistedCache();
+
+// ─── NAVIGATION ───
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  if (id === 'success') startCountdown();
+  if (id === 'payment') resetTimer();
+}
+
+// ─── SEARCH ───
+function handleSearch(q) {
+  currentQuery = q.toLowerCase().trim();
+  document.getElementById('search-clear').classList.toggle('hidden', q.length === 0);
+  renderList();
+}
+function clearSearch() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-clear').classList.add('hidden');
+  currentQuery = '';
+  renderList();
+}
+
+// ─── RENDER SONG LIST ───
+function renderList() {
+  const list = document.getElementById('songs-list');
+  const noRes = document.getElementById('no-results');
+  const countEl = document.getElementById('list-count');
+
+  const filtered = currentQuery
+    ? allSongs.filter(s =>
+        s.title.toLowerCase().includes(currentQuery) ||
+        s.artist.toLowerCase().includes(currentQuery)
+      )
+    : allSongs;
+
+  countEl.textContent = filtered.length + (filtered.length === 1 ? ' song' : ' songs');
+
+  if (filtered.length === 0) {
+    list.innerHTML = '';
+    noRes.classList.add('visible');
+    return;
+  }
+  noRes.classList.remove('visible');
+
+  list.innerHTML = '';
+  filtered.forEach(song => {
+    const isReq = requested.has(song.slug);
+    const row = document.createElement('div');
+    row.className = 'song-row' + (isReq ? ' requested' : '');
+    row.innerHTML = `
+      <div class="song-thumb">
+        <div class="song-thumb-placeholder" id="ph-${song.slug}">🎵</div>
+        <img id="img-${song.slug}" src="" alt="" style="opacity:0;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:9px;"
+          onerror="this.style.opacity=0;document.getElementById('ph-${song.slug}').style.display='flex'">
+      </div>
+      <div class="song-info">
+        <div class="song-row-title">${highlight(song.title, currentQuery)}</div>
+        <div class="song-row-artist">${highlight(song.artist, currentQuery)}</div>
+      </div>
+      ${isReq ? '<div class="requested-pill">Requested</div>' : '<div class="song-row-arrow">›</div>'}
+    `;
+    if (!isReq) row.onclick = () => pickSong(song);
+    list.appendChild(row);
+
+    // Load thumbnail async
+    getArtistThumb(song.artist).then(url => {
+      const img = document.getElementById('img-' + song.slug);
+      const ph  = document.getElementById('ph-'  + song.slug);
+      if (!img) return;
+      if (url.startsWith('data:')) {
+        // SVG avatar — show as background on placeholder instead
+        ph.innerHTML = `<img src="${url}" style="width:100%;height:100%;border-radius:9px;">`;
+      } else {
+        img.src = url;
+        img.style.opacity = '1';
+        ph.style.display = 'none';
+      }
+    });
+  });
+}
+
+// Highlight matched query text in results
+function highlight(text, q) {
+  if (!q) return text;
+  const idx = text.toLowerCase().indexOf(q);
+  if (idx < 0) return text;
+  return text.slice(0,idx) +
+    `<mark style="background:rgba(232,255,71,0.25);color:var(--accent);border-radius:3px;padding:0 1px">${text.slice(idx, idx+q.length)}</mark>` +
+    text.slice(idx + q.length);
+}
+
+// ─── SONG SELECTION ───
+function pickSong(song) {
+  selected = song;
+  tipAmount = 2;
+
+  // Donation screen
+  document.getElementById('sel-title').textContent = song.title;
+  document.getElementById('sel-artist').textContent = song.artist;
+
+  const selImg = document.getElementById('sel-thumb-img');
+  const selPh  = document.getElementById('sel-thumb-ph');
+  selImg.style.display = 'none';
+  selPh.style.display = 'flex';
+  getArtistThumb(song.artist).then(url => {
+    if (url.startsWith('data:')) {
+      selPh.innerHTML = `<img src="${url}" style="width:100%;height:100%;border-radius:9px;">`;
+    } else {
+      selImg.src = url; selImg.style.display = 'block'; selPh.style.display = 'none';
+    }
+  });
+
+  document.querySelectorAll('.preset').forEach((b,i) => b.classList.toggle('on', i===0));
+  updateTipUI();
+  goTo('donation');
+}
+
+// ─── TIP AMOUNT ───
+function setTip(val, btn) {
+  tipAmount = val;
+  document.querySelectorAll('.preset').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  updateTipUI();
+}
+function nudgeTip(d) {
+  tipAmount = Math.max(2, tipAmount + d);
+  document.querySelectorAll('.preset').forEach(b => b.classList.remove('on'));
+  updateTipUI();
+}
+function updateTipUI() {
+  document.getElementById('tip-val').textContent = tipAmount;
+  document.getElementById('pay-label').textContent = '£' + tipAmount;
+  const pct = Math.min(100, ((tipAmount - 2) / 23) * 90 + 10);
+  document.getElementById('step-fill').style.width = pct + '%';
+}
+
+// ─── PAY BUTTON → PAYMENT SCREEN ───
+document.getElementById('pay-btn').addEventListener('click', () => {
+  document.getElementById('pay-amt-display').textContent = '£' + tipAmount;
+  document.getElementById('pay-song-display').textContent = selected?.title || '—';
+  goTo('payment');
+});
+
+// ─── TIMER RESET ───
+function resetTimer() {
+  const f = document.getElementById('timer-fill');
+  f.style.animation = 'none'; f.offsetHeight;
+  f.style.animation = 'timer 30s linear forwards';
+}
+
+// ─── SIMULATE PAYMENT ───
+function simulatePay() {
+  document.getElementById('pending-song').textContent = selected?.title || '—';
+  document.getElementById('pending-amt').textContent = '£' + tipAmount;
+  goTo('pending');
+}
+
+// ─── APPROVAL ───
+function doApprove() {
+  if (selected) requested.add(selected.slug);
+  const sucThumbImg = document.getElementById('suc-thumb-img');
+  const sucThumbPh  = document.getElementById('suc-thumb-ph');
+  sucThumbImg.style.display = 'none'; sucThumbPh.style.display = 'flex';
+  document.getElementById('suc-title').textContent  = selected?.title  || '—';
+  document.getElementById('suc-artist').textContent = selected?.artist || '—';
+  getArtistThumb(selected?.artist || '').then(url => {
+    if (url.startsWith('data:')) {
+      sucThumbPh.innerHTML = `<img src="${url}" style="width:100%;height:100%;border-radius:50%">`;
+    } else {
+      sucThumbImg.src = url; sucThumbImg.style.display = 'block'; sucThumbPh.style.display = 'none';
+    }
+  });
+  goTo('success');
+}
+function doDecline() { goTo('declined'); }
+
+// ─── COUNTDOWN ───
+function startCountdown() {
+  if (cdInterval) clearInterval(cdInterval);
+  let n = 8;
+  document.getElementById('cd-num').textContent = n;
+  cdInterval = setInterval(() => {
+    n--;
+    document.getElementById('cd-num').textContent = n;
+    if (n <= 0) { clearInterval(cdInterval); renderList(); goTo('attract'); }
+  }, 1000);
+}
+
+// ─── ATTRACT TICKER ───
+function buildTicker() {
+  const wrap = document.getElementById('ticker');
+  const items = allSongs.map(s =>
+    `<span class="ticker-item">${s.title} <span class="ticker-sep">·</span> ${s.artist}</span>`
+  ).join('');
+  wrap.innerHTML = items + items; // duplicate for seamless loop
+}
+
+// ─── INIT ───
+buildTicker();
+renderList();
+</script>
+</body>
+</html>
