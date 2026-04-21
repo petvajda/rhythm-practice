@@ -647,37 +647,27 @@ function makeAvatar(artist) {
   return 'data:image/svg+xml;base64,' + btoa(svg);
 }
 
-// Fetch artist image from MusicBrainz → Cover Art Archive pipeline
-// Falls back gracefully to the initials avatar
+// Fetch artist artwork via iTunes Search API — CORS-friendly, no API key needed.
+// Searches by artist name, grabs the album artwork URL and upscales it to 200px.
+// Falls back gracefully to the initials avatar on any error or when offline.
 async function getArtistThumb(artist) {
   if (thumbCache[artist]) return thumbCache[artist];
   const fallback = makeAvatar(artist);
-  thumbCache[artist] = fallback; // set fallback immediately
+  thumbCache[artist] = fallback;
   try {
-    const q = encodeURIComponent(artist.split(' ft.')[0].split(' &')[0].trim());
-    const mbRes = await fetch(
-      `https://musicbrainz.org/ws/2/artist/?query=artist:${q}&limit=1&fmt=json`,
-      { headers: { 'User-Agent': 'BandTipKiosk/1.0 (demo)' } }
+    const cleanArtist = artist.split(/\s+ft\./i)[0].trim();
+    const q = encodeURIComponent(cleanArtist);
+    const res = await fetch(
+      `https://itunes.apple.com/search?term=${q}&entity=musicArtist&limit=1&media=music`
     );
-    if (!mbRes.ok) return fallback;
-    const mbData = await mbRes.json();
-    const mbid = mbData.artists?.[0]?.id;
-    if (!mbid) return fallback;
-    // Use fanart.tv-style or Wikipedia thumbnail via Wikidata
-    const wikidataId = mbData.artists?.[0]?.relations?.find?.(r => r.type === 'wikidata')?.url?.resource?.split('/')?.pop();
-    if (wikidataId) {
-      const wdRes = await fetch(`https://www.wikidata.org/wiki/Special:EntityData/${wikidataId}.json`);
-      const wdData = await wdRes.json();
-      const entity = wdData.entities?.[wikidataId];
-      const imgName = entity?.claims?.P18?.[0]?.mainsnak?.datavalue?.value;
-      if (imgName) {
-        const encoded = encodeURIComponent(imgName.replace(/ /g,'_'));
-        const url = `https://commons.wikimedia.org/wiki/Special:FilePath/${encoded}?width=80`;
-        thumbCache[artist] = url;
-        return url;
-      }
-    }
-  } catch(e) { /* network unavailable — stays as avatar */ }
+    if (!res.ok) return fallback;
+    const data = await res.json();
+    const raw = data.results?.[0]?.artworkUrl100;
+    if (!raw) return fallback;
+    const url = raw.replace('100x100bb', '200x200bb');
+    thumbCache[artist] = url;
+    return url;
+  } catch(e) {}
   return fallback;
 }
 
@@ -702,27 +692,25 @@ function persistCache() {
   try { localStorage.setItem(CACHE_KEY, JSON.stringify(thumbCache)); } catch(e) {}
 }
 
-// Pre-fetch every unique artist, throttled to respect MusicBrainz rate limit (1 req/sec).
-// Returns a promise that resolves when all artists are done.
-// onProgress(done, total) is called after each artist completes.
+// Pre-fetch every unique artist via iTunes Search API.
+// No rate-limit enforcement needed — iTunes allows reasonable request cadence.
 async function prefetchAllThumbs(onProgress) {
   const artists = [...new Set(allSongs.map(s => s.artist))];
   const total = artists.length;
   let done = 0;
 
   for (const artist of artists) {
-    // Skip if already cached with a real image (not just a fallback avatar)
     if (thumbCache[artist] && !thumbCache[artist].startsWith('data:image/svg')) {
       done++;
       onProgress && onProgress(done, total, artist, true);
       continue;
     }
-    await getArtistThumb(artist); // fetches + populates thumbCache[artist]
+    await getArtistThumb(artist);
     done++;
     onProgress && onProgress(done, total, artist, false);
-    persistCache(); // save after each one so partial progress survives a crash
-    // Rate-limit: MusicBrainz asks for max 1 req/sec
-    await new Promise(r => setTimeout(r, 1100));
+    persistCache();
+    // Small pause to avoid hammering the API
+    await new Promise(r => setTimeout(r, 200));
   }
   persistCache();
 }
@@ -770,7 +758,7 @@ function showPrefetchPanel() {
     </div>
     <div style="font-size:13px;color:#6b6585;margin-bottom:14px;line-height:1.5;">
       Downloads all artist thumbnails now so they work <strong style="color:#f2efff">offline during the show</strong>.
-      Needs WiFi. Takes ~${Math.ceil(artists.length * 1.1 / 60)} min.
+      Needs WiFi. Takes ~${Math.ceil(artists.length * 0.2 / 60) || 1} min.
     </div>
     <div style="display:flex;justify-content:space-between;font-size:12px;color:#6b6585;margin-bottom:8px;">
       <span id="pf-status">${cachedCount} / ${artists.length} artists cached</span>
